@@ -75,7 +75,7 @@ def handle_image_message(event):
     total_amount = parse_total_amount(text)
 
     # Reply total amount
-    reply_text = f"總計花費：{total_amount}元"
+    reply_text = f"總計花費：{total_amount}"
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=reply_text)

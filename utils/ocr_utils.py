@@ -17,6 +17,7 @@ def extract_text_from_image(image_path, lang='chi_tra+eng'):
     processed_image = preprocess_image(image)
     # OCR
     text = pytesseract.image_to_string(processed_image, lang=lang)
+    print("OCR result:" + text)
     return text
 
 def parse_total_amount(text):
