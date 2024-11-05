@@ -80,6 +80,7 @@ def handle_image_message(event):
         event.reply_token,
         TextSendMessage(text=reply_text)
     )
+    os.remove(temp_file_path)
 
 if __name__ == "__main__":
     # Detect if it is in Heroku

@@ -1,3 +1,5 @@
+import os
+
 import pytesseract
 from PIL import Image
 import re
@@ -10,7 +12,7 @@ def preprocess_image(image):
     binary = gray.point(lambda x: 0 if x < threshold else 255, '1')
     return binary
 
-def extract_text_from_image(image_path, lang='chi_tra+eng'):
+def extract_text_from_image(image_path, lang='chi_tra'):
     # open image
     image = Image.open(image_path)
     # preprocess image
