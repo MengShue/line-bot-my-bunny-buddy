@@ -6,7 +6,9 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from linebot.models import ImageMessage
 # OCR module
-from .ocr_utils import extract_text_from_image, parse_total_amount
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ocr_utils import extract_text_from_image, parse_total_amount
 
 
 app = Flask(__name__)
