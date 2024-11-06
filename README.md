@@ -82,7 +82,7 @@ python app.py
 git push heroku main
 ```
  - 3.	在 Heroku 的應用程式設定中，添加環境變數 CHANNEL_ACCESS_TOKEN 和 CHANNEL_SECRET。
- - 4.	在 LINE Developers Console 中，將 Webhook URL 設定為 https://<your-heroku-app-name>.herokuapp.com/callback。
+ - 4.	在 LINE Developers Console 中，將 Webhook URL 設定為 https://{your-heroku-app-name}.herokuapp.com/callback。
 
 ### 使用說明
 
