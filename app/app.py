@@ -6,7 +6,7 @@ from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from linebot.models import ImageMessage
 # OCR module
-from utils.ocr_utils import extract_text_from_image, parse_total_amount
+from utils.ocr_cloudvision import extract_text_from_image, parse_total_amount
 
 
 app = Flask(__name__)
@@ -48,7 +48,7 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text(event):
     # reply_text = event.message.text
-    app.logger.info(f"Get Message: {event.message}")
+    print(f"Get Message: {event.message}")
     # line_bot_api.reply_message(
     #     event.reply_token,
     #     TextSendMessage(text=reply_text)
@@ -69,7 +69,7 @@ def handle_image_message(event):
             fd.write(chunk)
 
     # Use OCR
-    text = extract_text_from_image(temp_file_path, lang='chi_tra+eng')
+    text = extract_text_from_image(temp_file_path)
 
     # Get Total amount
     total_amount = parse_total_amount(text)
