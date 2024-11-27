@@ -1,31 +1,68 @@
+from google.api_core.exceptions import GoogleAPICallError, RetryError
 from google.cloud import vision
 from google.oauth2 import service_account
 from itertools import groupby
+import logging
 import json
 import os
 import io
 import re
 
+
+# Logging
+logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
 def get_vision_client():
-    service_account_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON'])
-    credentials = service_account.Credentials.from_service_account_info(service_account_info)
-    client = vision.ImageAnnotatorClient(credentials=credentials)
-    return client
+    try:
+        # Detect Environment
+        if 'GOOGLE_APPLICATION_CREDENTIALS_JSON' not in os.environ:
+            raise EnvironmentError('Environment variable GOOGLE_APPLICATION_CREDENTIALS_JSON Not yet setting')
+        # Load service info
+        service_account_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON'])
+        credentials = service_account.Credentials.from_service_account_info(service_account_info)
+        client = vision.ImageAnnotatorClient(credentials=credentials)
+        return client
+    except json.JSONDecodeError as e:
+        logging.error('Service account JSON Analyze error：%s', e)
+        raise
+    except Exception as e:
+        logging.error('Init Vision API client error：%s', e)
+        raise
 
 def detect_text(path):
     client = get_vision_client()
 
-    with io.open(path, 'rb') as image_file:
-        content = image_file.read()
+    try:
+        with io.open(path, 'rb') as image_file:
+            content = image_file.read()
+    except FileNotFoundError:
+        logging.error('File Not Found:%s', path)
+        return ''
+    except Exception as e:
+        logging.error('Error while reading:%s', e)
+        return ''
 
-    image = vision.Image(content=content)
-
-    response = client.text_detection(image=image)
-    texts = response.text_annotations
-
-    if texts:
-        return texts[0].description
-    else:
+    try:
+        image = vision.Image(content=content)
+        response = client.text_detection(image=image)
+        if response.error.message:
+            logging.error('Vision API return error：%s', response.error.message)
+            return ''
+        texts = response.text_annotations
+        if texts:
+            return texts[0].description
+        else:
+            logging.warning('Can not detect any text.')
+            return ''
+    except GoogleAPICallError as e:
+        logging.error('Call Vision API error:%s', e)
+        return ''
+    except RetryError as e:
+        logging.error('Call Vision API Retry error:%s', e)
+        return ''
+    except Exception as e:
+        logging.error('Handle Vision API Response error:%s', e)
         return ''
 
 def parse_total_amount(text):
@@ -45,7 +82,7 @@ def parse_total_amount(text):
              for item in lines
              for k, j in groupby(item, str.isdigit)
              ]
-    print(lines)
+    logging.info(f"google vision api return string:{lines}")
 
     # List of currency total amount definition
     amount_keywords = [
