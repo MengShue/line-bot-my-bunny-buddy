@@ -6,3 +6,6 @@ pytesseract~=0.3.10
 Pillow~=10.1.0
 google-cloud-vision==3.8.1
 google-cloud-storage==2.18.2
+protobuf~=4.25.5
+requests~=2.32.3
+beautifulsoup4~=4.12.3
