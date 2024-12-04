@@ -82,24 +82,12 @@ def handle_image_message(event):
     print(f"message: {message}")
 
     # Reply Message
-    if kind == 'invoice':
-        reply_text = \
-        f"""
-        \u2764 看起來是一張收據喔 \u2764
-        支出已追蹤：{message}
-        """
-    elif kind == 'receipt':
-        reply_text = \
-        f"""
-        \u2764 看起來是一張發票喔 \u2764
-        試圖幫你兌獎：{message}
-        """
+    if kind == 'receipt':
+        reply_text = f"\u2764 看起來是一張收據喔 \u2764\n支出已追蹤：{message}"
+    elif kind == 'invoice':
+        reply_text = f"\u2764 看起來是一張發票喔 \u2764\n試圖幫你兌獎：{message}"
     else:
-        reply_text = \
-        f"""
-        \u2764 你餵我吃了什麼？ \u2764
-        我只吃發票或收據喔!
-        """
+        reply_text = f"\u2764 你餵我吃了什麼？ \u2764\n我只吃發票或收據喔!"
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=reply_text)
