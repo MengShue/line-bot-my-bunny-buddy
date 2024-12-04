@@ -51,7 +51,7 @@ def callback():
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text(event):
     # reply_text = event.message.text
-    logging.info(f"Get Message: {event.message}")
+    print(f"Get Message: {event.message}")
     # line_bot_api.reply_message(
     #     event.reply_token,
     #     TextSendMessage(text=reply_text)
@@ -74,22 +74,29 @@ def handle_image_message(event):
     # Use OCR
     text = extract_text_from_image(temp_file_path)
 
+    print(f"OCR result:{text}")
+
     # Get Message
     kind, message = process_receipt_or_invoice(text)
+    print(f"kind: {kind}")
+    print(f"message: {message}")
 
     # Reply Message
     if kind == 'invoice':
-        reply_text = f"""
+        reply_text = \
+        f"""
         \u2764 看起來是一張收據喔 \u2764
         支出已追蹤：{message}
         """
     elif kind == 'receipt':
-        reply_text = f"""
+        reply_text = \
+        f"""
         \u2764 看起來是一張發票喔 \u2764
         試圖幫你兌獎：{message}
         """
     else:
-        reply_text = f"""
+        reply_text = \
+        f"""
         \u2764 你餵我吃了什麼？ \u2764
         我只吃發票或收據喔!
         """
