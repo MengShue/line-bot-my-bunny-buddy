@@ -2,6 +2,7 @@ from google.api_core.exceptions import GoogleAPICallError, RetryError
 from google.cloud import vision
 from google.oauth2 import service_account
 from itertools import groupby
+from datetime import datetime
 import logging
 import json
 import os
@@ -10,7 +11,7 @@ import re
 
 
 # Logging
-logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def get_vision_client():
@@ -65,7 +66,7 @@ def detect_text(path):
         logging.error('Handle Vision API Response error:%s', e)
         return ''
 
-def parse_total_amount(text):
+def parse_total_amount(text, lines_to_check=5):
     # print(text)  # local debug use
     # text to string list
     lines = text.strip().split('\n')
@@ -73,16 +74,7 @@ def parse_total_amount(text):
               for item in lines
               for x in item.split(':')
               ]
-    lines = [x
-             for item in lines
-             for x in item.split(' ')
-             ]
-    # split digits and alphabetic string
-    lines = [''.join(j).strip()
-             for item in lines
-             for k, j in groupby(item, str.isdigit)
-             ]
-    logging.info(f"google vision api return string:{lines}")
+    lines = [ item for item in lines if item != '']
 
     # List of currency total amount definition
     amount_keywords = [
@@ -90,42 +82,86 @@ def parse_total_amount(text):
         '销售总额', '总计', '总额', '应收', '应付金额', '结算金额', '总金额',
         'Grand Total', 'TOTAL', 'Payable', '合計', '金额', '金額'
     ]
+    logging.info(f"line:\n {lines}")
+    try:
 
-    # Record every amount after keyword showing
-    amounts_after_keywords = []
+        # Record possible amount candidate
+        candidate_amounts = []
 
-    # Traverse from beginning
-    for i in range(len(lines)):
-        line = lines[i].strip()
-        # Detect if containing keyword
-        for keyword in amount_keywords:
-            if keyword in line:
-                # Find number in the following list
-                amounts_found = []
-                for j in range(1, 6):  # check al least 5 elements
-                    if i + j < len(lines):
-                        next_line = lines[i + j].strip()
-                        # Find all digits
-                        numbers = re.findall(r'\d+[,\d]*\.?\d*', next_line.replace(',', ''))
-                        for num_str in numbers:
-                            try:
-                                amount_value = float(num_str.replace(',', ''))
-                                amounts_found.append(amount_value)
-                            except ValueError:
-                                continue
-                if amounts_found:
-                    # Record the maximum digits and its index after keyword
-                    max_amount = max(amounts_found)
-                    amounts_after_keywords.append((i, max_amount))
-                break  # No need to find another keyword after find one
+        # Traverse from beginning
+        for i, line in enumerate(lines):
+            line = line.strip()
+            # Detect if containing keyword
+            for keyword in amount_keywords:
+                if keyword in line:
+                    # Find number in the following list
+                    start_index = max(0, i - lines_to_check)
+                    end_index = min(len(lines), i + lines_to_check + 1)
+                    possible_amounts = []
+                    for j in range(start_index, end_index):
+                        amounts_in_line = extract_amounts_from_line(lines[j])
+                        possible_amounts.extend(amounts_in_line)
 
-    if amounts_after_keywords:
-        # Select the last keyword and maximum number
-        last_index, last_amount = amounts_after_keywords[-1]
-        return str(last_amount)
+                    # Filter possible amount
+                    filtered_amounts = filter_possible_amounts(possible_amounts)
 
-    # Return error string if you can not find
-    return "無法識別總金額"
+                    # If found filtered amount, add to candidate
+                    if filtered_amounts:
+                        candidate_amounts.extend(filtered_amounts)
+                    break  # No need to find another keyword after find one
+
+        if candidate_amounts:
+            # Return the maximum digits
+            total_amount = max(candidate_amounts)
+            return str(total_amount)
+
+        # Return can't find if we can't recognize
+        return "無法識別總金額"
+    except Exception as e:
+        logging.error('解析金額時發生錯誤：%s', e)
+        return "無法識別總金額"
+
+
+def extract_amounts_from_line(line):
+    """
+    從字串中提取可能金額列表
+    """
+    # 移除漢字和單位
+    line = re.sub(r'[元圓圆]', '', line)
+
+    # 提取含數字和逗點、小數點、貨幣符號的字串
+    amount_patterns = re.findall(r'[\$￥]?[\d,]+\.?\d*', line)
+    amounts = []
+    for amt_str in amount_patterns:
+        # 移除貨幣符號
+        amt_str = amt_str.replace('$', '').replace('￥', '')
+        amt_str = amt_str.replace(',', '')  # 移除逗號
+        try:
+            amount_value = float(amt_str)
+            amounts.append(amount_value)
+        except ValueError:
+            continue
+    return amounts
+
+
+def filter_possible_amounts(amounts):
+    """
+    過濾可能的金額，排除年份、日期等不太可能是金額的數字。
+    """
+    filtered_amounts = []
+    current_date = datetime.now()
+    year = current_date.year
+    for amt in amounts:
+        # 排除年份
+        if amt == year:
+            continue  # 可能是年份，排除
+        if amt == 0:
+            continue  # 排除為0的金額
+        if amt > 1000000:
+            continue  # 排除過大的金額
+        # 可以新增排除條件
+        filtered_amounts.append(amt)
+    return filtered_amounts
 
 def extract_text_from_image(image_path):
     text = detect_text(image_path)
@@ -135,5 +171,6 @@ def extract_text_from_image(image_path):
 if __name__ == "__main__":
     image_path = '.../xxx.JPG'
     text = extract_text_from_image(image_path)
+    print(f"\n{text}")
     amount = parse_total_amount(text)
-    print(f"提取的金额：{amount}")
+    print(f"\n提取的金额：{amount}")
