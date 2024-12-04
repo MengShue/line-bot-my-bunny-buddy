@@ -11,14 +11,16 @@ def is_uniform_invoice(ocr_text):
     """
     判斷文本是否為統一發票
     """
-    # 判斷是否還有"電子發票"or"統一發票"
+    condition_1 = False
+    condition_2 = False
+    # 判斷是否含有"電子發票"or"統一發票"
     if '電子發票' in ocr_text or '統一發票' in ocr_text:
-        return True
+        condition_1 = True
     # 判斷是否含有發票格式的英數字
     invoice_number_pattern = r'[A-Z]{2}[-]?\s?\d{8}'
     if re.search(invoice_number_pattern, ocr_text):
-        return True
-    return False
+        condition_2 = True
+    return condition_1 and condition_2
 
 
 def process_uniform_invoice(text):
