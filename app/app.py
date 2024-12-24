@@ -83,12 +83,14 @@ def handle_image_message(event):
     print(f"message: {message}")
 
     # Reply Message
-    if kind == 'receipt':
+    if kind == 'receipt' and type(message) is dict:
         amount = message["amount"]
         category = message["category"]
         reply_text = f"\u2764 看起來是一張收據喔 \u2764\n支出已追蹤：{amount}\n消費類別：{category}"
     elif kind == 'invoice':
         reply_text = f"\u2764 看起來是一張發票喔 \u2764\n試圖幫你兌獎：{message}"
+    elif kind == 'receipt' and type(message) is str:
+        reply_text = f"\u2764 看起來是一張收據喔 \u2764\n但分析時出了些問題QQ"
     else:
         reply_text = f"\u2764 你餵我吃了什麼？ \u2764\n我只吃發票或收據喔!"
     line_bot_api.reply_message(
