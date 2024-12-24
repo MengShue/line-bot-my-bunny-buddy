@@ -5,7 +5,7 @@ import logging
 import json
 import os
 import io
-from ai_agent import ReceiptAIAgent
+from utils.ai_agent import ReceiptAIAgent
 
 # Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
