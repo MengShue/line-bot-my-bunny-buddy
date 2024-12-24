@@ -5,6 +5,7 @@ from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 from linebot.models import ImageMessage
+
 # OCR module
 from utils.ocr_cloudvision import extract_text_from_image, parse_total_amount
 from utils.invoice_processing import is_uniform_invoice, process_uniform_invoice
@@ -83,7 +84,9 @@ def handle_image_message(event):
 
     # Reply Message
     if kind == 'receipt':
-        reply_text = f"\u2764 看起來是一張收據喔 \u2764\n支出已追蹤：{message}"
+        amount = message["amount"]
+        category = message["category"]
+        reply_text = f"\u2764 看起來是一張收據喔 \u2764\n支出已追蹤：{amount}\n消費類別：{category}"
     elif kind == 'invoice':
         reply_text = f"\u2764 看起來是一張發票喔 \u2764\n試圖幫你兌獎：{message}"
     else:
