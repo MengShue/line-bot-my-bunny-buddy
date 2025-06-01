@@ -1,0 +1,17 @@
+version: '3.9'
+
+services:
+  linebot:
+    build: .
+    container_name: linebot
+    restart: always
+    ports:
+      - "5500:5500"
+    environment:
+      - CHANNEL_ACCESS_TOKEN=${CHANNEL_ACCESS_TOKEN}
+      - CHANNEL_SECRET=${CHANNEL_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS_JSON=${GOOGLE_APPLICATION_CREDENTIALS_JSON}
+      - PORT=5500
+    volumes:
+      - .:/code

@@ -82,7 +82,7 @@ server:
 
 #### 本地運行
 ```commandline
-python app.py
+python -m app.app
 ```
 #### 部署至 Heroku
 
