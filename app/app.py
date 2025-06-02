@@ -9,7 +9,7 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMess
 # OCR module
 from utils.ocr_cloudvision import extract_text_from_image, parse_total_amount
 from utils.invoice_processing import is_uniform_invoice, process_uniform_invoice
-from utils.cwa import get_radar_image_url
+from utils.cwa import get_radar_image_url, get_rainfall_image_url
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -73,7 +73,6 @@ def handle_text(event):
         try:
             radar_url = asyncio.run(get_radar_image_url())
             if radar_url:
-                # 直接用 radar_url 當原圖與預覽圖
                 line_bot_api.reply_message(
                     event.reply_token,
                     ImageSendMessage(original_content_url=radar_url, preview_image_url=radar_url)
@@ -88,6 +87,27 @@ def handle_text(event):
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="⚡ 取得雷達回波圖時發生錯誤，請稍後再試。")
+            )
+        return
+    if user_text == "@雨量":
+        import asyncio
+        try:
+            rainfall_url = asyncio.run(get_rainfall_image_url())
+            if rainfall_url:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    ImageSendMessage(original_content_url=rainfall_url, preview_image_url=rainfall_url)
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="⚡ 取得雨量圖失敗，請稍後再試。")
+                )
+        except Exception as e:
+            logging.error(f"取得雨量圖時發生錯誤: {e}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="⚡ 取得雨量圖時發生錯誤，請稍後再試。")
             )
         return
     # 其他文字訊息暫不處理
