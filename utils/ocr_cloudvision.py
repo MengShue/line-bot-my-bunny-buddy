@@ -5,7 +5,7 @@ import logging
 import json
 import os
 import io
-from utils.ai_agent import ReceiptAIAgent
+from utils.ai_agent import get_receipt_ai_agent_from_env
 
 # Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -65,12 +65,7 @@ def detect_text(path):
 
 def parse_total_amount(text):
     try:
-        api_key = os.environ.get("OPENAI_API_KEY", "YOUR_API_KEY")
-        agent = ReceiptAIAgent(
-            api_key=api_key,
-            model="gpt-3.5-turbo",  # or "gpt-4"
-            temperature=0.2
-        )
+        agent = get_receipt_ai_agent_from_env()
         result = agent.analyze_receipt_text(text)
         return result
     except Exception as e:

@@ -1,14 +1,15 @@
 import os
+from dotenv import load_dotenv
 import yaml
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
-from linebot.models import ImageMessage
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage, ImageSendMessage
 
 # OCR module
 from utils.ocr_cloudvision import extract_text_from_image, parse_total_amount
 from utils.invoice_processing import is_uniform_invoice, process_uniform_invoice
+from utils.cwa import get_radar_image_url
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -36,11 +37,26 @@ with open(config_path, 'r') as yml:
 HOST = config['server']['host']
 PORT = config['server']['port']
 
+load_dotenv()
+
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
     app.logger.info("Request body: " + body)
+
+    # 新增：嘗試解析 userId 與 text 並 logging
+    try:
+        import json
+        json_data = json.loads(body)
+        events = json_data.get('events', [])
+        if events:
+            event = events[0]
+            user_id = event.get('source', {}).get('userId', None)
+            text = event.get('message', {}).get('text', None)
+            logging.info(f"LINE Request - userId: {user_id}, text: {text}")
+    except Exception as e:
+        logging.warning(f"解析 userId/text 失敗: {e}")
 
     try:
         handler.handle(body, signature)
@@ -51,7 +67,30 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text(event):
-    # reply_text = event.message.text
+    user_text = event.message.text.strip()
+    if user_text == "@雷達":
+        import asyncio
+        try:
+            radar_url = asyncio.run(get_radar_image_url())
+            if radar_url:
+                # 直接用 radar_url 當原圖與預覽圖
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    ImageSendMessage(original_content_url=radar_url, preview_image_url=radar_url)
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="⚡ 取得雷達回波圖失敗，請稍後再試。")
+                )
+        except Exception as e:
+            logging.error(f"取得雷達回波圖時發生錯誤: {e}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="⚡ 取得雷達回波圖時發生錯誤，請稍後再試。")
+            )
+        return
+    # 其他文字訊息暫不處理
     print(f"Get Message: {event.message}")
     # line_bot_api.reply_message(
     #     event.reply_token,
