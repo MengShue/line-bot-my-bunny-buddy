@@ -3,4 +3,5 @@ __pycache__/
 *.png
 .DS_Store
 .env
+k8s/secret.yaml
 
