@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linebot
+  namespace: linebot
+  labels:
+    app: linebot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: linebot
+  template:
+    metadata:
+      labels:
+        app: linebot
+    spec:
+      containers:
+        - name: linebot
+          image: meng555/meng:latest
+          ports:
+            - containerPort: 5500
+          env:
+            - name: CHANNEL_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: linebot-secrets
+                  key: CHANNEL_ACCESS_TOKEN
+            - name: CHANNEL_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: linebot-secrets
+                  key: CHANNEL_SECRET
+            - name: AI_PROVIDER
+              valueFrom:
+                secretKeyRef:
+                  name: linebot-secrets
+                  key: AI_PROVIDER
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: linebot-secrets
+                  key: GEMINI_API_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: linebot-secrets
+                  key: OPENAI_API_KEY
+            - name: GOOGLE_APPLICATION_CREDENTIALS_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: linebot-secrets
+                  key: GOOGLE_APPLICATION_CREDENTIALS_JSON
+            - name: CWA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: linebot-secrets
+                  key: CWA_API_KEY
+            - name: PORT
+              value: "5500"
+          volumeMounts:
+            - name: linebot-code
+              mountPath: /code
+      volumes:
+        - name: linebot-code
+          hostPath:
+            path: /home/alan/project/line-bot-my-bunny-buddy
+            type: Directory

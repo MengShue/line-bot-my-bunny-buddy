@@ -17,7 +17,9 @@ def get_vision_client():
         if 'GOOGLE_APPLICATION_CREDENTIALS_JSON' not in os.environ:
             raise EnvironmentError('Environment variable GOOGLE_APPLICATION_CREDENTIALS_JSON Not yet setting')
         # Load service info
-        service_account_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON'])
+        env_google_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON']
+        env_google_json = env_google_json.replace('\n','\\n')
+        service_account_info = json.loads(env_google_json)
         credentials = service_account.Credentials.from_service_account_info(service_account_info)
         client = vision.ImageAnnotatorClient(credentials=credentials)
         return client
