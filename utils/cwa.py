@@ -13,7 +13,7 @@ async def get_cwa_product_url(dataset_id: str, product_url_path: List[str]) -> O
     取得中央氣象局指定 dataset_id 的 ProductURL。
 
     Args:
-        dataset_id (str): 資料集 ID（如 O-A0058-001、O-A0040-001）
+        dataset_id (str): 資料集 ID（如 O-A0058-001、O-A0040-002）
         product_url_path (List[str]): 取得 ProductURL 的 JSON 路徑
     Returns:
         Optional[str]: 產品圖片網址，失敗則回傳 None
@@ -69,7 +69,7 @@ async def get_rainfall_image_url() -> Optional[str]:
     """
     取得中央氣象局雨量圖的 PNG 圖片網址。
     """
-    return await get_cwa_product_url("O-A0040-001", ["cwaopendata", "dataset", "Resource", "ProductURL"])
+    return await get_cwa_product_url("O-A0040-002", ["cwaopendata", "dataset", "Resource", "ProductURL"])
 
 
 if __name__ == "__main__":
