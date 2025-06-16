@@ -39,6 +39,7 @@ PORT = config['server']['port']
 
 load_dotenv()
 
+
 @app.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
@@ -64,6 +65,7 @@ def callback():
         abort(400)
 
     return 'OK'
+
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_text(event):
@@ -117,10 +119,12 @@ def handle_text(event):
     #     TextSendMessage(text=reply_text)
     # )
 
+
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image(event):
-        # Handle image
-        handle_image_message(event)
+    # Handle image
+    handle_image_message(event)
+
 
 def handle_image_message(event):
     # Download image from line
@@ -149,14 +153,15 @@ def handle_image_message(event):
     elif kind == 'invoice':
         reply_text = f"\u2764 看起來是一張發票喔 \u2764\n試圖幫你兌獎：{message}"
     elif kind == 'receipt' and type(message) is str:
-        reply_text = f"\u2764 看起來是一張收據喔 \u2764\n但分析時出了些問題QQ"
+        reply_text = "\u2764 看起來是一張收據喔 \u2764\n但分析時出了些問題QQ"
     else:
-        reply_text = f"\u2764 你餵我吃了什麼？ \u2764\n我只吃發票或收據喔!"
+        reply_text = "\u2764 你餵我吃了什麼？ \u2764\n我只吃發票或收據喔!"
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=reply_text)
     )
     os.remove(temp_file_path)
+
 
 def process_receipt_or_invoice(text):
     if is_uniform_invoice(text):
@@ -167,6 +172,7 @@ def process_receipt_or_invoice(text):
         # 收據，處理收據邏輯
         amount = parse_total_amount(text)
         return 'receipt', amount
+
 
 if __name__ == "__main__":
     # Detect if it is in Heroku
