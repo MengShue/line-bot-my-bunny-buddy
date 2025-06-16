@@ -5,7 +5,12 @@ metadata:
   namespace: linebot
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
+  tls:
+  - hosts:
+    - lineapi.minibot.com.tw
+    secretName: lineapi-tls
   rules:
   - host: lineapi.minibot.com.tw
     http:

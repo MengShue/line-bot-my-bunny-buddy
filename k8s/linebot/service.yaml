@@ -4,11 +4,9 @@ metadata:
   name: linebot-service
   namespace: linebot
 spec:
-  type: NodePort
   selector:
     app: linebot
   ports:
     - protocol: TCP
       port: 5500
       targetPort: 5500
-      nodePort: 32500  # 你可以自定義 port 範圍 30000-32767
