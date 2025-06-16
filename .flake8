@@ -9,5 +9,7 @@ exclude =
     venv,
     .venv
 ignore =
-    E203,  # whitespace before ':' (與 black 衝突)
-    W503   # line break before binary operator (與 black 衝突)
+# whitespace before ':'
+    E203,
+# line break before binary operator
+    W503
