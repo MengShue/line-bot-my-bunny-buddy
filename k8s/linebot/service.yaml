@@ -8,5 +8,5 @@ spec:
     app: linebot
   ports:
     - protocol: TCP
-      port: 5500
+      port: 80
       targetPort: 5500
