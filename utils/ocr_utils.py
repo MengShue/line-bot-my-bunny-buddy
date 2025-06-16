@@ -13,11 +13,13 @@ def crop_image_to_roi(image):
     cropped_image = image.crop(roi_box)
     return cropped_image
 
+
 def scale_size(image):
     scale_factor = 0.7
     new_size = (int(image.width * scale_factor), int(image.height * scale_factor))
     image = image.resize(new_size, Image.Resampling.LANCZOS)
     return image
+
 
 def preprocess_image(image):
     # Adjust Image direction
@@ -32,6 +34,7 @@ def preprocess_image(image):
     enhanced_image = enhancer.enhance(1.2)
     # enhanced_image.save("example.png")  # Local debug use
     return enhanced_image
+
 
 def extract_text_from_image(image_path, lang='chi_tra'):
     # open image
@@ -100,6 +103,7 @@ def parse_total_amount(text):
 
     # Return error message if all regex do not match
     return "無法識別總金額"
+
 
 if __name__ == "__main__":
     extract_text = extract_text_from_image("/.../xxx.JPG")

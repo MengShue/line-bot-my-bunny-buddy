@@ -30,6 +30,7 @@ def get_vision_client():
         logging.error('Init Vision API client error：%s', e)
         raise
 
+
 def detect_text(path):
     client = get_vision_client()
 
@@ -65,6 +66,7 @@ def detect_text(path):
         logging.error('Handle Vision API Response error:%s', e)
         return ''
 
+
 def parse_total_amount(text):
     try:
         agent = get_receipt_ai_agent_from_env()
@@ -73,6 +75,7 @@ def parse_total_amount(text):
     except Exception as e:
         logging.error('解析金額時發生錯誤：%s', e)
         return "無法識別總金額"
+
 
 def extract_text_from_image(image_path):
     text = detect_text(image_path)

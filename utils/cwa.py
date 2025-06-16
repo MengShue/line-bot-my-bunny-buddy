@@ -7,6 +7,7 @@ from typing import Optional, List
 CWA_API_BASE = "https://opendata.cwa.gov.tw/fileapi/v1/opendataapi/"
 CWA_API_KEY = os.environ.get("CWA_API_KEY", "YOUR_CWA_API_KEY")
 
+
 async def get_cwa_product_url(dataset_id: str, product_url_path: List[str]) -> Optional[str]:
     """
     取得中央氣象局指定 dataset_id 的 ProductURL。
@@ -55,6 +56,7 @@ async def get_cwa_product_url(dataset_id: str, product_url_path: List[str]) -> O
         logging.error(f"取得 CWA 產品圖時發生錯誤: {e}")
         return None
 
+
 async def get_radar_image_url() -> Optional[str]:
     """
     取得中央氣象局雷達回波圖的 PNG 圖片網址。
@@ -62,11 +64,13 @@ async def get_radar_image_url() -> Optional[str]:
     # 雷達圖新版路徑
     return await get_cwa_product_url("O-A0058-001", ["cwaopendata", "dataset", "resource", "ProductURL"])
 
+
 async def get_rainfall_image_url() -> Optional[str]:
     """
     取得中央氣象局雨量圖的 PNG 圖片網址。
     """
     return await get_cwa_product_url("O-A0040-001", ["cwaopendata", "dataset", "Resource", "ProductURL"])
+
 
 if __name__ == "__main__":
     import asyncio

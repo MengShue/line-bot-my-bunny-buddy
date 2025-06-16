@@ -10,6 +10,7 @@ except ImportError:
 
 from openai import OpenAI
 
+
 class ReceiptAIAgent:
     """
     This class encapsulate the logic of communicating with AI.
@@ -59,6 +60,7 @@ class ReceiptAIAgent:
             "original_text: string,\n"
             "請確保是合法的 JSON。"
         )
+
 
     def analyze_receipt_text(self, ocr_text: str) -> Dict[str, Any]:
         """
@@ -124,6 +126,7 @@ class ReceiptAIAgent:
             logging.error(f"呼叫 {self.provider} 過程發生錯誤：%s", e)
             return self._default_response(ocr_text)
 
+
     def _default_response(self, original_text: str) -> Dict[str, Any]:
         """
         Return Default json struct if call or analyze failure
@@ -147,6 +150,7 @@ def get_receipt_ai_agent_from_env() -> ReceiptAIAgent:
     else:
         api_key = os.environ.get("OPENAI_API_KEY", None)
         return ReceiptAIAgent(api_key=api_key, provider="openai")
+
 
 if __name__ == "__main__":
     # Init an AI Agent Obj

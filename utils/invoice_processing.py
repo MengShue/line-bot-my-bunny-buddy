@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 # 配置 logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 def is_uniform_invoice(ocr_text):
     """
     判斷文本是否為統一發票
