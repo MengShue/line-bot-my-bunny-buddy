@@ -18,7 +18,7 @@ def get_vision_client():
             raise EnvironmentError('Environment variable GOOGLE_APPLICATION_CREDENTIALS_JSON Not yet setting')
         # Load service info
         env_google_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON']
-        env_google_json = env_google_json.replace('\n','\\n')
+        env_google_json = env_google_json.replace('\n', '\\n')
         service_account_info = json.loads(env_google_json)
         credentials = service_account.Credentials.from_service_account_info(service_account_info)
         client = vision.ImageAnnotatorClient(credentials=credentials)
@@ -80,6 +80,7 @@ def parse_total_amount(text):
 def extract_text_from_image(image_path):
     text = detect_text(image_path)
     return text
+
 
 # Local use
 if __name__ == "__main__":

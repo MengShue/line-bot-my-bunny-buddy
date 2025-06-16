@@ -61,7 +61,6 @@ class ReceiptAIAgent:
             "請確保是合法的 JSON。"
         )
 
-
     def analyze_receipt_text(self, ocr_text: str) -> Dict[str, Any]:
         """
         Use AI to analyze text after OCR, return json
@@ -126,7 +125,6 @@ class ReceiptAIAgent:
             logging.error(f"呼叫 {self.provider} 過程發生錯誤：%s", e)
             return self._default_response(ocr_text)
 
-
     def _default_response(self, original_text: str) -> Dict[str, Any]:
         """
         Return Default json struct if call or analyze failure
@@ -137,6 +135,7 @@ class ReceiptAIAgent:
             "confidence": 0,
             "original_text": original_text,
         }
+
 
 # 工廠函式：根據環境變數自動選擇 AI provider
 def get_receipt_ai_agent_from_env() -> ReceiptAIAgent:

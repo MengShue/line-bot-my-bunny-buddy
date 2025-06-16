@@ -1,5 +1,5 @@
 import pytesseract
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance
+from PIL import Image, ImageOps, ImageEnhance
 import re
 
 

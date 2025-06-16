@@ -221,8 +221,6 @@ def get_winning_numbers(url):
     period_match = re.search(r'(\d+)年(\d+)-(\d+)月', title)
     if not period_match:
         raise Exception('無法解析期別')
-    year = int(period_match.group(1)) + 1911  # 民國轉公元
-    months = period_match.group(2) + '-' + period_match.group(3)
 
     # 提取中獎號碼
     winning_numbers = {
@@ -241,11 +239,10 @@ def get_winning_numbers(url):
     if special_prize:
         winning_numbers['grand_prize'].append(special_prize[1].get_text(strip=True))
 
-
     # 頭獎
     first_prize = soup.find_all('span', {'class': 'font-weight-bold'})
     if first_prize:
-        for i in range(2,8,2):
+        for i in range(2, 8, 2):
             first_prize_numbers = first_prize[i].get_text(strip=True) + first_prize[i + 1].get_text(strip=True)
             winning_numbers['first_prize'].append(first_prize_numbers)
 
@@ -307,6 +304,7 @@ def match_first_prize(invoice_num, winning_num):
         if invoice_num[-i:] == winning_num[-i:]:
             return prize_names[i]
     return None
+
 
 # local debug use
 if __name__ == "__main__":

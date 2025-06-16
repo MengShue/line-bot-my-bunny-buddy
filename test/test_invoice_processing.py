@@ -1,14 +1,3 @@
-import unittest
-from unittest.mock import patch
-from datetime import datetime
-import os, sys
-import logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [unittest]- %(levelname)s - %(message)s', stream=sys.stdout)
-# 獲取程式根目錄
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# 將跟目錄加到 sys.path
-sys.path.insert(0, parent_dir)
-
 from utils.invoice_processing import (
     parse_invoice_period,
     is_redeemable,
@@ -20,7 +9,21 @@ from utils.invoice_processing import (
     get_last_invoice_period,
 )
 
+import unittest
+from unittest.mock import patch
+from datetime import datetime
+import os
+import sys
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [unittest]- %(levelname)s - %(message)s', stream=sys.stdout)
+# 獲取程式根目錄
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 將跟目錄加到 sys.path
+sys.path.insert(0, parent_dir)
+
+
 class TestInvoiceProcessing(unittest.TestCase):
+
 
     def test_parse_invoice_period(self):
         # Normal
@@ -42,6 +45,7 @@ class TestInvoiceProcessing(unittest.TestCase):
         period_info = parse_invoice_period(text)
         self.assertIsNone(period_info)
 
+
     def test_is_redeemable(self):
         # 現在期別
         period_info = get_current_invoice_period()
@@ -58,12 +62,14 @@ class TestInvoiceProcessing(unittest.TestCase):
         redeemable = is_redeemable(future_period_info)
         self.assertFalse(redeemable)
 
+
     def test_get_draw_and_redeem_dates(self):
         # 測試第6期(11-12月)
         period_info = {'year': 2024, 'period': 6}
         draw_date, redeem_deadline = get_draw_and_redeem_dates(period_info)
         self.assertEqual(draw_date, datetime(2025, 1, 25))
         self.assertEqual(redeem_deadline, datetime(2025, 5, 5))
+
 
     def test_match_first_prize(self):
         invoice_num = '12345678'
@@ -82,6 +88,7 @@ class TestInvoiceProcessing(unittest.TestCase):
         invoice_num = '00321678'
         prize = match_first_prize(invoice_num, winning_num)
         self.assertEqual(prize, '六獎 200元')
+
 
     @patch('utils.invoice_processing.get_winning_numbers')
     def test_check_prize(self, mock_get_winning_numbers):
@@ -108,6 +115,7 @@ class TestInvoiceProcessing(unittest.TestCase):
         invoice_number = 'AB00000000'
         prize = check_prize(invoice_number, winning_numbers)
         self.assertIsNone(prize)
+
 
     @patch('utils.invoice_processing.get_winning_numbers_for_period')
     @patch('utils.invoice_processing.parse_invoice_period')
@@ -149,6 +157,7 @@ class TestInvoiceProcessing(unittest.TestCase):
         result = process_uniform_invoice(text)
         self.assertIn("未能提取發票期別", result)
 
+
     def test_get_current_and_last_period(self):
         current_period = get_current_invoice_period()
         last_period = get_last_invoice_period()
@@ -158,6 +167,7 @@ class TestInvoiceProcessing(unittest.TestCase):
         # 檢查年份合理性
         self.assertGreaterEqual(current_period['year'], 2023)
         self.assertGreaterEqual(last_period['year'], 2022)
+
 
 if __name__ == '__main__':
     unittest.main()
