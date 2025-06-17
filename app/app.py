@@ -9,7 +9,7 @@ from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMess
 # OCR module
 from utils.ocr_cloudvision import extract_text_from_image, parse_total_amount
 from utils.invoice_processing import is_uniform_invoice, process_uniform_invoice
-from utils.cwa import get_radar_image_url, get_rainfall_image_url
+from utils.cwa import get_radar_image_url, get_rainfall_image_url, get_temperature_image_url, get_qpf_image_url
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -91,6 +91,27 @@ def handle_text(event):
                 TextSendMessage(text="⚡ 取得雷達回波圖時發生錯誤，請稍後再試。")
             )
         return
+    if user_text == "@溫度":
+        import asyncio
+        try:
+            temperature_url = asyncio.run(get_temperature_image_url())
+            if temperature_url:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    ImageSendMessage(original_content_url=temperature_url, preview_image_url=temperature_url)
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="⚡ 取得溫度分布圖失敗，請稍後再試。")
+                )
+        except Exception as e:
+            logging.error(f"取得溫度分布圖時發生錯誤: {e}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="⚡ 取得溫度分布圖時發生錯誤，請稍後再試。")
+            )
+        return
     if user_text == "@雨量":
         import asyncio
         try:
@@ -110,6 +131,27 @@ def handle_text(event):
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="⚡ 取得雨量圖時發生錯誤，請稍後再試。")
+            )
+        return
+    if user_text == "@定量降水":
+        import asyncio
+        try:
+            qpf_url = asyncio.run(get_qpf_image_url())
+            if qpf_url:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    ImageSendMessage(original_content_url=qpf_url, preview_image_url=qpf_url)
+                )
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="⚡ 取得定量降水預報圖失敗，請稍後再試。")
+                )
+        except Exception as e:
+            logging.error(f"取得定量降水預報圖時發生錯誤: {e}")
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="⚡ 取得定量降水預報圖時發生錯誤，請稍後再試。")
             )
         return
     # 其他文字訊息暫不處理

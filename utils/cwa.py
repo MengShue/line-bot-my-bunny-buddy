@@ -72,9 +72,27 @@ async def get_rainfall_image_url() -> Optional[str]:
     return await get_cwa_product_url("O-A0040-002", ["cwaopendata", "dataset", "Resource", "ProductURL"])
 
 
+async def get_temperature_image_url() -> Optional[str]:
+    """
+    取得中央氣象局溫度分布圖的 JPEG 圖片網址。
+    """
+    return await get_cwa_product_url("O-A0038-001", ["cwaopendata", "dataset", "Resource", "ProductURL"])
+
+
+async def get_qpf_image_url() -> Optional[str]:
+    """
+    取得中央氣象局定量降水預報圖的 PNG 圖片網址。
+    """
+    return await get_cwa_product_url("F-C0035-015", ["cwaopendata", "Dataset", "Resource", "ProductURL"])
+
+
 if __name__ == "__main__":
     import asyncio
     radar_url = asyncio.run(get_radar_image_url())
     print("雷達圖：", radar_url)
     rainfall_url = asyncio.run(get_rainfall_image_url())
     print("雨量圖：", rainfall_url)
+    temperature_url = asyncio.run(get_temperature_image_url())
+    print("溫度圖：", temperature_url)
+    qpf_url = asyncio.run(get_qpf_image_url())
+    print("定量降水預報圖：", qpf_url)
