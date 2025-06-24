@@ -26,10 +26,6 @@ pipeline {
     stage('Copy Code') {
       steps {
         script {
-          def podName = sh(
-            script: "kubectl -n ${NS} get pod -l app=linebot -o jsonpath='{.items[0].metadata.name}'",
-            returnStdout: true
-          ).trim()
           sh "kubectl -n ${NS} cp . ${podName}:/app"
         }
       }
