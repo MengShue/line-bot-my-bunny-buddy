@@ -1,5 +1,10 @@
 pipeline {
-  agent any
+  agent {
+    kubernetes {
+      label 'kubectl-agent'
+      defaultContainer 'kubectl'
+    }
+  }
   environment {
     NS = "PR-${env.CHANGE_ID ?: env.BRANCH_NAME}"
   }
