@@ -49,7 +49,7 @@ pipeline {
   }
 }
 
-def getPodName {
+def getPodName() {
   def podName = sh(
     script: "kubectl -n ${NS} get pod -l app=linebot -o jsonpath='{.items[0].metadata.name}'",
     returnStdout: true
