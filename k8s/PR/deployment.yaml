@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linebot
+  labels:
+    app: linebot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: linebot
+  template:
+    metadata:
+      labels:
+        app: linebot
+    spec:
+      containers:
+      - name: linebot-pod
+        image: python:3.10-slim
+        command: ["sleep", "infinity"]
+        volumeMounts:
+        - name: app-volume
+          mountPath: /app
+      volumes:
+      - name: app-volume
+        emptyDir: {}
