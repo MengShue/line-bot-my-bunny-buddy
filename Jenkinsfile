@@ -7,7 +7,7 @@ pipeline {
     }
   }
   environment {
-    NS = "PR-${env.CHANGE_ID ?: env.BRANCH_NAME}"
+    NS = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}"
   }
   stages {
     stage('Create Namespace') {
