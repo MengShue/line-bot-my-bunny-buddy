@@ -1,6 +1,7 @@
 pipeline {
   agent {
     kubernetes {
+      yamlFile 'jenkins/pod.yaml'
       label 'kubectl-agent'
       defaultContainer 'kubectl'
     }
