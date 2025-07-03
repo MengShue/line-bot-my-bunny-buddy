@@ -5,6 +5,7 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage, ImageSendMessage
+from flasgger import Swagger
 
 # OCR module
 from utils.ocr_cloudvision import extract_text_from_image, parse_total_amount
@@ -15,6 +16,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
+swagger = Swagger(app)
 
 # Get LINE Channel Secret and Access Token from Environment Variables
 CHANNEL_ACCESS_TOKEN = os.getenv('CHANNEL_ACCESS_TOKEN')
@@ -42,6 +44,33 @@ load_dotenv()
 
 @app.route("/callback", methods=['POST'])
 def callback():
+    """
+    LINE Bot Webhook Callback
+    ---
+    post:
+      summary: LINE Bot Webhook Callback
+      description: 接收 LINE 平台的 webhook 事件，處理訊息與圖片。
+      consumes:
+        - application/json
+      parameters:
+        - in: header
+          name: X-Line-Signature
+          required: true
+          schema:
+            type: string
+          description: LINE 平台簽章
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+          description: LINE webhook event payload
+      responses:
+        200:
+          description: OK
+        400:
+          description: Invalid signature
+    """
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
     app.logger.info("Request body: " + body)
