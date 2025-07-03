@@ -16,7 +16,20 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 app = Flask(__name__)
-swagger = Swagger(app)
+swagger = Swagger(app, config={
+    "headers": [],
+    'specs': [
+        {
+            'endpoint': 'linebot',
+            'route': '/linebot.json',
+            'rule_filter': lambda rule: True,  # include all endpoints
+            'model_filter': lambda tag: True,  # include all models
+        }
+    ],
+    'static_url_path': '/flasgger_static',
+    'swagger_ui': True,
+    'specs_route': '/apidocs/'
+})
 
 # Get LINE Channel Secret and Access Token from Environment Variables
 CHANNEL_ACCESS_TOKEN = os.getenv('CHANNEL_ACCESS_TOKEN')
