@@ -1,7 +1,6 @@
 import requests
 import yaml
 import os
-import pytest
 
 # 讀取 config 檔案取得 server ip/port
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'integration_config.yaml')
@@ -27,4 +26,4 @@ def test_callback_missing_signature():
         ]
     }
     resp = requests.post(url, json=payload, timeout=5)
-    assert resp.status_code == 500 
+    assert resp.status_code == 500
