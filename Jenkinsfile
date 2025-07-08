@@ -17,28 +17,17 @@ pipeline {
     }
     stage('Create Secrets') {
       steps {
-        script {
-          // 建立 docker registry secret
-          sh '''
-          kubectl -n ${NS} get secret dockerhub-secret || \
-          kubectl -n ${NS} create secret docker-registry dockerhub-secret \
-            --docker-username=$DOCKER_USER \
-            --docker-password=$DOCKER_PASS \
-            --docker-email=$DOCKER_EMAIL
-          '''
-          // 建立 linebot-secrets
-          sh '''
-          kubectl -n ${NS} get secret linebot-secrets || \
-          kubectl -n ${NS} create secret generic linebot-secrets \
-            --from-literal=CHANNEL_ACCESS_TOKEN="$CHANNEL_ACCESS_TOKEN" \
-            --from-literal=CHANNEL_SECRET="$CHANNEL_SECRET" \
-            --from-literal=AI_PROVIDER="$AI_PROVIDER" \
-            --from-literal=GEMINI_API_KEY="$GEMINI_API_KEY" \
-            --from-literal=OPENAI_API_KEY="$OPENAI_API_KEY" \
-            --from-literal=GOOGLE_APPLICATION_CREDENTIALS_JSON="$GOOGLE_APPLICATION_CREDENTIALS_JSON" \
-            --from-literal=CWA_API_KEY="$CWA_API_KEY"
-          '''
+        withCredentials([file(credentialsId: 'linebot-secrets-yaml', variable: 'LINEBOT_SECRET_FILE')]) {
+          sh "kubectl -n ${NS} apply -f $LINEBOT_SECRET_FILE"
         }
+        // dockerhub-secret still build from from-literal
+        sh '''
+        kubectl -n ${NS} get secret dockerhub-secret || \
+        kubectl -n ${NS} create secret docker-registry dockerhub-secret \
+          --docker-username=$DOCKER_USER \
+          --docker-password=$DOCKER_PASS \
+          --docker-email=$DOCKER_EMAIL
+        '''
       }
     }
 
@@ -47,7 +36,11 @@ pipeline {
         sh "kubectl -n ${NS} apply -f k8s/linebot/deployment.yaml"
         sh "kubectl -n ${NS} apply -f k8s/linebot/service.yaml"
         sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
+        // Assume PR code would not build docker image, so we need to copy code to pod.
         sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/code"
+        // Delete pod to trigger restart and run code from /code
+        sh "kubectl -n ${NS} delete pod ${getPodName('linebot')}"
+        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
       }
     }
 

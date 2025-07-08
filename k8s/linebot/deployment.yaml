@@ -19,6 +19,16 @@ spec:
       containers:
         - name: linebot
           image: meng555/meng:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              if [ -f /code/app/app.py ]; then
+                echo 'Run code from /code';
+                cd /code && python -m app.app;
+              else
+                echo 'Run code from image';
+                python -m app.app;
+              fi
           ports:
             - containerPort: 5500
           env:
