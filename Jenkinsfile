@@ -57,7 +57,7 @@ pipeline {
           // 2. 等待 Ingress 生效
           sh "sleep 10"
           // 3. 執行 integration test
-          sh "kubectl -n ${NS} exec ${getPodName()} -- bash -c 'pytest automation/test_callback_integration.py'"
+          sh "kubectl -n ${NS} exec ${getPodName()} -- bash -c 'cd /app && pip install -r requirements.txt && pytest automation/test_callback_integration.py'"
         }
       }
     }
