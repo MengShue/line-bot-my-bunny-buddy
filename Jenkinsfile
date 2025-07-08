@@ -47,7 +47,6 @@ pipeline {
         sh "kubectl -n ${NS} apply -f k8s/linebot/service.yaml"
         // sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
         sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/pr"
-        sh "sleep 180" //debug
         sh "kubectl -n ${NS} delete pod ${getPodName('linebot')}"
         sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
       }
