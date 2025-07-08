@@ -46,7 +46,7 @@ pipeline {
     stage('Deploy Ingress') {
       steps {
         script {
-          env.PR_HOST = "PR-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
+          env.PR_HOST = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
           sh "export NS=${NS} PR_HOST=${PR_HOST} && envsubst < k8s/PR/ingress.yaml | kubectl -n ${NS} apply -f -"
         }
       }
@@ -55,7 +55,7 @@ pipeline {
     stage('Run Integration Tests') {
       steps {
         script {
-          env.PR_HOST = "PR-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
+          env.PR_HOST = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
           // 1. 先改 config 檔
           sh "sed -i 's/^host: .*/host: ${env.PR_HOST}/' automation/integration_config.yaml"
           // 2. 等待 Ingress 生效
