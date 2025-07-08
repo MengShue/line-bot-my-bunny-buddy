@@ -114,7 +114,8 @@ class TestInvoiceProcessing(unittest.TestCase):
     @patch('utils.invoice_processing.is_redeemable', return_value=True)
     @patch('utils.invoice_processing.get_winning_numbers_for_period')
     @patch('utils.invoice_processing.parse_invoice_period')
-    def test_process_uniform_invoice(self, mock_parse_invoice_period, mock_get_winning_numbers_for_period, mock_is_redeemable):
+    def test_process_uniform_invoice(self, mock_parse_invoice_period,
+                                     mock_get_winning_numbers_for_period, mock_is_redeemable):
         # mock 發票期別
         period_info = get_last_invoice_period()
         period_info['month'] = f"{period_info['period'] * 2 - 1}-{period_info['period'] * 2}月"
