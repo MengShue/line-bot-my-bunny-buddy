@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: linebot-ingress
+  namespace: ${NS}
+spec:
+  rules:
+    - host: ${PR_HOST}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: linebot-service
+                port:
+                  number: 80 

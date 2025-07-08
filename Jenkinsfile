@@ -38,7 +38,30 @@ pipeline {
             script: "kubectl -n ${NS} get pod -l app=linebot -o jsonpath='{.items[0].metadata.name}'",
             returnStdout: true
           ).trim()
-          sh "kubectl -n ${NS} exec ${getPodName()} -- bash -c 'cd /app && pip install -r requirements.txt && python3 -m unittest discover'"
+          sh "kubectl -n ${NS} exec ${podName} -- bash -c 'cd /app && pip install -r requirements.txt && python3 -m unittest discover'"
+        }
+      }
+    }
+
+    stage('Deploy Ingress') {
+      steps {
+        script {
+          env.PR_HOST = "PR-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
+          sh "export NS=${NS} PR_HOST=${PR_HOST} && envsubst < k8s/PR/ingress.yaml | kubectl -n ${NS} apply -f -"
+        }
+      }
+    }
+
+    stage('Run Integration Tests') {
+      steps {
+        script {
+          env.PR_HOST = "PR-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
+          // 1. 先改 config 檔
+          sh "sed -i 's/^host: .*/host: ${env.PR_HOST}/' automation/integration_config.yaml"
+          // 2. 等待 Ingress 生效
+          sh "sleep 10"
+          // 3. 執行 integration test
+          sh "pytest automation/test_callback_integration.py"
         }
       }
     }
