@@ -3,22 +3,21 @@ kind: Deployment
 metadata:
   name: linebot
   labels:
-    app: linebot
+    app: linebot-pr
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: linebot
+      app: linebot-pr
   template:
     metadata:
       labels:
-        app: linebot
+        app: linebot-pr
     spec:
       containers:
       - name: linebot-pod
         image: python:3.10-slim
-        command: ["python"]
-        args: ["-m", "app.app"]
+        command: ["sleep", "infinity"]
         volumeMounts:
         - name: app-volume
           mountPath: /app

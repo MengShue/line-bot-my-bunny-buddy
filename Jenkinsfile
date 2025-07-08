@@ -16,17 +16,24 @@ pipeline {
       }
     }
 
+    stage('Deploy Main Server') {
+      steps {
+        sh "kubectl -n ${NS} apply -f k8s/linebot/deployment.yaml"
+        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
+      }
+    }
+
     stage('Deploy Test Pod') {
       steps {
         sh "kubectl -n ${NS} apply -f k8s/PR/deployment.yaml"
-        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
+        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot-pr --timeout=90s"
       }
     }
 
     stage('Copy Code') {
       steps {
         script {
-          sh "kubectl -n ${NS} cp . ${podName}:/app"
+          sh "kubectl -n ${NS} cp . ${getPodName()}:/app"
         }
       }
     }
@@ -72,7 +79,7 @@ pipeline {
 
 def getPodName() {
   def podName = sh(
-    script: "kubectl -n ${NS} get pod -l app=linebot -o jsonpath='{.items[0].metadata.name}'",
+    script: "kubectl -n ${NS} get pod -l app=linebot-pr -o jsonpath='{.items[0].metadata.name}'",
     returnStdout: true
   ).trim()
   return podName
