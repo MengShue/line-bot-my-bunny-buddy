@@ -5,6 +5,8 @@ metadata:
   labels:
     app: linebot
 spec:
+  imagePullSecrets:
+    - name: dockerhub-secret
   replicas: 1
   selector:
     matchLabels:

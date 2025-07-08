@@ -15,6 +15,32 @@ pipeline {
         sh "kubectl create ns ${NS}"
       }
     }
+    stage('Create Secrets') {
+      steps {
+        script {
+          // 建立 docker registry secret
+          sh '''
+          kubectl -n ${NS} get secret dockerhub-secret || \
+          kubectl -n ${NS} create secret docker-registry dockerhub-secret \
+            --docker-username=$DOCKER_USER \
+            --docker-password=$DOCKER_PASS \
+            --docker-email=$DOCKER_EMAIL
+          '''
+          // 建立 linebot-secrets
+          sh '''
+          kubectl -n ${NS} get secret linebot-secrets || \
+          kubectl -n ${NS} create secret generic linebot-secrets \
+            --from-literal=CHANNEL_ACCESS_TOKEN="$CHANNEL_ACCESS_TOKEN" \
+            --from-literal=CHANNEL_SECRET="$CHANNEL_SECRET" \
+            --from-literal=AI_PROVIDER="$AI_PROVIDER" \
+            --from-literal=GEMINI_API_KEY="$GEMINI_API_KEY" \
+            --from-literal=OPENAI_API_KEY="$OPENAI_API_KEY" \
+            --from-literal=GOOGLE_APPLICATION_CREDENTIALS_JSON="$GOOGLE_APPLICATION_CREDENTIALS_JSON" \
+            --from-literal=CWA_API_KEY="$CWA_API_KEY"
+          '''
+        }
+      }
+    }
 
     stage('Deploy Main Server') {
       steps {
