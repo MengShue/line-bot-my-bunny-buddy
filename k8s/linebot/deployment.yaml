@@ -22,12 +22,12 @@ spec:
           command: ["/bin/bash", "-c"]
           args:
             - |
-              if [ -f /code/app/app.py ]; then
-                echo 'Run code from /code';
-                cd /code && python -m app.app;
+              if [ -f /pr/app/app.py ]; then
+                echo 'Run code from /pr';
+                cd /pr && python -m app.app;
               else
                 echo 'Run code from image';
-                python -m app.app;
+                cd /code && python -m app.app;
               fi
           ports:
             - containerPort: 5500
@@ -71,7 +71,7 @@ spec:
               value: "5500"
           volumeMounts:
             - name: linebot-code
-              mountPath: /code
+              mountPath: /pr
           readinessProbe:
             httpGet:
               path: /apidocs
