@@ -17,7 +17,8 @@ spec:
       containers:
       - name: linebot-pod
         image: python:3.10-slim
-        command: ["sleep", "infinity"]
+        command: ["python"]
+        args: ["-m", "app.app"]
         volumeMounts:
         - name: app-volume
           mountPath: /app
