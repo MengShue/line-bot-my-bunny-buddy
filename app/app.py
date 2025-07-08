@@ -258,6 +258,12 @@ def process_receipt_or_invoice(text):
         return 'receipt', amount
 
 
+@app.route("/healthz")
+def healthz():
+    """Health check endpoint for Kubernetes probe."""
+    return "ok", 200
+
+
 if __name__ == "__main__":
     # Detect if it is in Heroku
     if 'PORT' in os.environ:

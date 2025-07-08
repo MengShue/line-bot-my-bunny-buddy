@@ -74,14 +74,14 @@ spec:
               mountPath: /pr
           readinessProbe:
             httpGet:
-              path: /apidocs
+              path: /healthz
               port: 5500
             initialDelaySeconds: 5
             periodSeconds: 5
             failureThreshold: 6
           livenessProbe:
             httpGet:
-              path: /apidocs
+              path: /healthz
               port: 5500
             initialDelaySeconds: 10
             periodSeconds: 10
