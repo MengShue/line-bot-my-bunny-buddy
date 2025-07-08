@@ -33,16 +33,21 @@ pipeline {
       }
     }
 
+    stage('Create PVC') {
+      steps {
+        sh '''
+        envsubst < k8s/PR/pvc.yaml | kubectl apply -f -
+        '''
+      }
+    }
+
     stage('Deploy Main Server') {
       steps {
         sh "kubectl -n ${NS} apply -f k8s/linebot/deployment.yaml"
         sh "kubectl -n ${NS} apply -f k8s/linebot/service.yaml"
-        // For testing PR, so we don't need to wait for pod to be ready.
         // sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
-        // Assume PR code would not build docker image, so we need to copy code to pod.
         sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/pr"
-        sh "kubectl -n ${NS} exec ${getPodName('linebot')} -- pkill -f 'python -m app.app' || true"
-        sh "kubectl -n ${NS} exec ${getPodName('linebot')} -- bash -c 'cd /pr && python -m app.app &'"
+        sh "kubectl -n ${NS} delete pod ${getPodName('linebot')}"
         sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
       }
     }
@@ -96,6 +101,7 @@ pipeline {
 
   post {
     always {
+      sh "kubectl -n ${NS} delete pvc ${NS}-pr-code || true"
       sh "kubectl delete ns ${NS} || true"
     }
   }

@@ -70,7 +70,7 @@ spec:
             - name: PORT
               value: "5500"
           volumeMounts:
-            - name: linebot-code
+            - name: pr-code
               mountPath: /pr
           readinessProbe:
             httpGet:
@@ -87,5 +87,6 @@ spec:
             periodSeconds: 10
             failureThreshold: 6
       volumes:
-        - name: linebot-code
-          emptyDir: {}
+        - name: pr-code
+          persistentVolumeClaim:
+            claimName: ${NS}-pr-code
