@@ -21,13 +21,15 @@ pipeline {
           sh "kubectl -n ${NS} apply -f $LINEBOT_SECRET_FILE"
         }
         // dockerhub-secret still build from from-literal
-        sh '''
-        kubectl -n ${NS} get secret dockerhub-secret || \
-        kubectl -n ${NS} create secret docker-registry dockerhub-secret \
-          --docker-server=https://index.docker.io/v1/ \
-          --docker-username=$DOCKER_USER \
-          --docker-password=$DOCKER_PASS
-        '''
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-credential', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            kubectl -n ${NS} get secret dockerhub-secret || \
+            kubectl -n ${NS} create secret docker-registry dockerhub-secret \
+              --docker-server=https://index.docker.io/v1/ \
+              --docker-username=$DOCKER_USER \
+              --docker-password=$DOCKER_PASS
+          '''
+        }
       }
     }
 
