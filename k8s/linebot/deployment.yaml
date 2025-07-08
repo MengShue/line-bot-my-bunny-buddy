@@ -60,6 +60,20 @@ spec:
           volumeMounts:
             - name: linebot-code
               mountPath: /code
+          readinessProbe:
+            httpGet:
+              path: /apidocs
+              port: 5500
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /apidocs
+              port: 5500
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 6
       volumes:
         - name: linebot-code
           emptyDir: {}
