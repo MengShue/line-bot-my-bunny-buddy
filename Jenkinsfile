@@ -24,6 +24,7 @@ pipeline {
         sh '''
         kubectl -n ${NS} get secret dockerhub-secret || \
         kubectl -n ${NS} create secret docker-registry dockerhub-secret \
+          --docker-server=https://index.docker.io/v1/ \
           --docker-username=$DOCKER_USER \
           --docker-password=$DOCKER_PASS \
           --docker-email=$DOCKER_EMAIL
