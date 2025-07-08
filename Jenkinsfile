@@ -37,11 +37,13 @@ pipeline {
       steps {
         sh "kubectl -n ${NS} apply -f k8s/linebot/deployment.yaml"
         sh "kubectl -n ${NS} apply -f k8s/linebot/service.yaml"
-        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
+        // For testing PR, so we don't need to wait for pod to be ready.
+        // sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
         // Assume PR code would not build docker image, so we need to copy code to pod.
-        sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/code"
+        sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/pr"
         sh "kubectl -n ${NS} exec ${getPodName('linebot')} -- pkill -f 'python -m app.app' || true"
-        sh "kubectl -n ${NS} exec ${getPodName('linebot')} -- bash -c 'cd /code && python -m app.app &'"
+        sh "kubectl -n ${NS} exec ${getPodName('linebot')} -- bash -c 'cd /pr && python -m app.app &'"
+        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
       }
     }
 
