@@ -38,9 +38,8 @@ pipeline {
         sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
         // Assume PR code would not build docker image, so we need to copy code to pod.
         sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/code"
-        // Delete pod to trigger restart and run code from /code
-        sh "kubectl -n ${NS} delete pod ${getPodName('linebot')}"
-        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
+        sh "kubectl -n ${NS} exec ${getPodName('linebot')} -- pkill -f 'python -m app.app' || true"
+        sh "kubectl -n ${NS} exec ${getPodName('linebot')} -- bash -c 'cd /code && python -m app.app &'"
       }
     }
 
