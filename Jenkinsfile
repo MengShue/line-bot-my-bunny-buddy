@@ -34,11 +34,7 @@ pipeline {
     stage('Run Tests') {
       steps {
         script {
-          def podName = sh(
-            script: "kubectl -n ${NS} get pod -l app=linebot -o jsonpath='{.items[0].metadata.name}'",
-            returnStdout: true
-          ).trim()
-          sh "kubectl -n ${NS} exec ${podName} -- bash -c 'cd /app && pip install -r requirements.txt && python3 -m unittest discover'"
+          sh "kubectl -n ${NS} exec ${getPodName()} -- bash -c 'cd /app && pip install -r requirements.txt && python3 -m unittest discover'"
         }
       }
     }
@@ -61,7 +57,7 @@ pipeline {
           // 2. 等待 Ingress 生效
           sh "sleep 10"
           // 3. 執行 integration test
-          sh "pytest automation/test_callback_integration.py"
+          sh "kubectl -n ${NS} exec ${getPodName()} -- bash -c 'pytest automation/test_callback_integration.py"
         }
       }
     }
