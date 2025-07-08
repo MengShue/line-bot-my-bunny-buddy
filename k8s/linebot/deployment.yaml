@@ -24,7 +24,7 @@ spec:
             - |
               if [ -f /pr/app/app.py ]; then
                 echo 'Run code from /pr';
-                cd /pr && python -m app.app;
+                cd /pr && pip install -r requirements.txt && python -m app.app;
               else
                 echo 'Run code from image';
                 cd /code && python -m app.app;
