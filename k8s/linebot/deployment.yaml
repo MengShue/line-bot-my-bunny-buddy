@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: linebot
-  namespace: linebot
   labels:
     app: linebot
 spec:
@@ -63,6 +62,4 @@ spec:
               mountPath: /code
       volumes:
         - name: linebot-code
-          hostPath:
-            path: /home/alan/project/line-bot-my-bunny-buddy
-            type: Directory
+          emptyDir: {}

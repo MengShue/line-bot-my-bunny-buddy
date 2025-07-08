@@ -19,7 +19,9 @@ pipeline {
     stage('Deploy Main Server') {
       steps {
         sh "kubectl -n ${NS} apply -f k8s/linebot/deployment.yaml"
+        sh "kubectl -n ${NS} apply -f k8s/linebot/service.yaml"
         sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
+        sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/code"
       }
     }
 
@@ -33,7 +35,7 @@ pipeline {
     stage('Copy Code') {
       steps {
         script {
-          sh "kubectl -n ${NS} cp . ${getPodName()}:/app"
+          sh "kubectl -n ${NS} cp . ${getPodName('linebot-pr')}:/app"
         }
       }
     }
@@ -41,7 +43,7 @@ pipeline {
     stage('Run Tests') {
       steps {
         script {
-          sh "kubectl -n ${NS} exec ${getPodName()} -- bash -c 'cd /app && pip install -r requirements.txt && python3 -m unittest discover'"
+          sh "kubectl -n ${NS} exec ${getPodName('linebot-pr')} -- bash -c 'cd /app && pip install -r requirements.txt && python3 -m unittest discover'"
         }
       }
     }
@@ -60,11 +62,11 @@ pipeline {
         script {
           env.PR_HOST = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
           // 1. 先改 config 檔
-          sh "kubectl -n ${NS} exec ${getPodName()} -- bash -c 'cd /app && sed -i \"s|^host: .*|host: ${env.PR_HOST}|\" automation/integration_config.yaml'"
+          sh "kubectl -n ${NS} exec ${getPodName('linebot-pr')} -- bash -c 'cd /app && sed -i \"s|^host: .*|host: ${env.PR_HOST}|\" automation/integration_config.yaml'"
           // 2. 等待 Ingress 生效
           sh "sleep 10"
           // 3. 執行 integration test
-          sh "kubectl -n ${NS} exec ${getPodName()} -- bash -c 'cd /app && pip install -r requirements.txt && pytest automation/test_callback_integration.py'"
+          sh "kubectl -n ${NS} exec ${getPodName('linebot-pr')} -- bash -c 'cd /app && pip install -r requirements.txt && pytest automation/test_callback_integration.py'"
         }
       }
     }
@@ -77,9 +79,9 @@ pipeline {
   }
 }
 
-def getPodName() {
+def getPodName(label) {
   def podName = sh(
-    script: "kubectl -n ${NS} get pod -l app=linebot-pr -o jsonpath='{.items[0].metadata.name}'",
+    script: "kubectl -n ${NS} get pod -l app=${label} -o jsonpath='{.items[0].metadata.name}'",
     returnStdout: true
   ).trim()
   return podName
