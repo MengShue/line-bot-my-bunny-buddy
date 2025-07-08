@@ -53,7 +53,7 @@ pipeline {
         script {
           env.PR_HOST = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
           // 1. 先改 config 檔
-          sh "sed -i 's/^host: .*/host: ${env.PR_HOST}/' automation/integration_config.yaml"
+          sh "sed -i 's|^host: .*|host: ${env.PR_HOST}|' automation/integration_config.yaml"
           // 2. 等待 Ingress 生效
           sh "sleep 10"
           // 3. 執行 integration test
