@@ -43,7 +43,7 @@ pipeline {
 
     stage('Deploy Main Server') {
       steps {
-        sh "kubectl -n ${NS} apply -f k8s/linebot/deployment.yaml"
+        sh "export NS=${NS} && envsubst < k8s/linebot/deployment.yaml | kubectl -n ${NS} apply -f -"
         sh "kubectl -n ${NS} apply -f k8s/linebot/service.yaml"
         // sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
         sh "sleep 90"
