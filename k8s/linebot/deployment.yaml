@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: linebot
-  namespace: linebot
   labels:
     app: linebot
 spec:
@@ -15,9 +14,21 @@ spec:
       labels:
         app: linebot
     spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
       containers:
         - name: linebot
           image: meng555/meng:latest
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              if [ -f /pr/app/app.py ]; then
+                echo 'Run code from /pr';
+                cd /pr && pip install -r requirements.txt && python -m app.app;
+              else
+                echo 'Run code from image';
+                cd /code && python -m app.app;
+              fi
           ports:
             - containerPort: 5500
           env:
@@ -59,10 +70,23 @@ spec:
             - name: PORT
               value: "5500"
           volumeMounts:
-            - name: linebot-code
-              mountPath: /code
+            - name: pr-code
+              mountPath: /pr
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5500
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5500
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 6
       volumes:
-        - name: linebot-code
-          hostPath:
-            path: /home/alan/project/line-bot-my-bunny-buddy
-            type: Directory
+        - name: pr-code
+          persistentVolumeClaim:
+            claimName: ${NS}-pr-code

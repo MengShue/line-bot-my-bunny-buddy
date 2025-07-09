@@ -15,18 +15,55 @@ pipeline {
         sh "kubectl create ns ${NS}"
       }
     }
+    stage('Create Secrets') {
+      steps {
+        withCredentials([file(credentialsId: 'linebot-secrets-yaml', variable: 'LINEBOT_SECRET_FILE')]) {
+          sh "kubectl -n ${NS} apply -f $LINEBOT_SECRET_FILE"
+        }
+        // dockerhub-secret still build from from-literal
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-credential', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+          sh '''
+            kubectl -n ${NS} get secret dockerhub-secret || \
+            kubectl -n ${NS} create secret docker-registry dockerhub-secret \
+              --docker-server=https://index.docker.io/v1/ \
+              --docker-username=$DOCKER_USER \
+              --docker-password=$DOCKER_PASS
+          '''
+        }
+      }
+    }
+
+    stage('Create PVC') {
+      steps {
+        sh '''
+        envsubst < k8s/PR/pvc.yaml | kubectl apply -f -
+        '''
+      }
+    }
+
+    stage('Deploy Main Server') {
+      steps {
+        sh "export NS=${NS} && envsubst < k8s/linebot/deployment.yaml | kubectl -n ${NS} apply -f -"
+        sh "kubectl -n ${NS} apply -f k8s/linebot/service.yaml"
+        // sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
+        sh "sleep 90"
+        sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/pr"
+        sh "kubectl -n ${NS} delete pod ${getPodName('linebot')}"
+        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
+      }
+    }
 
     stage('Deploy Test Pod') {
       steps {
         sh "kubectl -n ${NS} apply -f k8s/PR/deployment.yaml"
-        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
+        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot-pr --timeout=90s"
       }
     }
 
     stage('Copy Code') {
       steps {
         script {
-          sh "kubectl -n ${NS} cp . ${podName}:/app"
+          sh "kubectl -n ${NS} cp . ${getPodName('linebot-pr')}:/app"
         }
       }
     }
@@ -34,11 +71,7 @@ pipeline {
     stage('Run Tests') {
       steps {
         script {
-          def podName = sh(
-            script: "kubectl -n ${NS} get pod -l app=linebot -o jsonpath='{.items[0].metadata.name}'",
-            returnStdout: true
-          ).trim()
-          sh "kubectl -n ${NS} exec ${podName} -- bash -c 'cd /app && pip install -r requirements.txt && python3 -m unittest discover'"
+          sh "kubectl -n ${NS} exec ${getPodName('linebot-pr')} -- bash -c 'cd /app && pip install -r requirements.txt && python3 -m unittest discover'"
         }
       }
     }
@@ -46,7 +79,7 @@ pipeline {
     stage('Deploy Ingress') {
       steps {
         script {
-          env.PR_HOST = "PR-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
+          env.PR_HOST = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
           sh "export NS=${NS} PR_HOST=${PR_HOST} && envsubst < k8s/PR/ingress.yaml | kubectl -n ${NS} apply -f -"
         }
       }
@@ -55,13 +88,13 @@ pipeline {
     stage('Run Integration Tests') {
       steps {
         script {
-          env.PR_HOST = "PR-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
+          env.PR_HOST = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
           // 1. 先改 config 檔
-          sh "sed -i 's/^host: .*/host: ${env.PR_HOST}/' automation/integration_config.yaml"
+          sh "kubectl -n ${NS} exec ${getPodName('linebot-pr')} -- bash -c 'cd /app && sed -i \"s|^host: .*|host: ${env.PR_HOST}|\" automation/integration_config.yaml'"
           // 2. 等待 Ingress 生效
           sh "sleep 10"
           // 3. 執行 integration test
-          sh "pytest automation/test_callback_integration.py"
+          sh "kubectl -n ${NS} exec ${getPodName('linebot-pr')} -- bash -c 'cd /app && pip install -r requirements.txt && pytest automation/test_callback_integration.py'"
         }
       }
     }
@@ -69,14 +102,20 @@ pipeline {
 
   post {
     always {
-      sh "kubectl delete ns ${NS} || true"
+      // 先刪除所有資源
+      sh "kubectl -n ${NS} delete deployment --all || true"
+      sh "kubectl -n ${NS} delete pod --all || true"
+      sh "kubectl -n ${NS} delete svc --all || true"
+      sh "kubectl -n ${NS} delete pvc --all || true"
+      // 再刪 namespace
+      sh "kubectl delete ns ${NS} --wait=false || true"
     }
   }
 }
 
-def getPodName() {
+def getPodName(label) {
   def podName = sh(
-    script: "kubectl -n ${NS} get pod -l app=linebot -o jsonpath='{.items[0].metadata.name}'",
+    script: "kubectl -n ${NS} get pod -l app=${label} -o jsonpath='{.items[0].metadata.name}'",
     returnStdout: true
   ).trim()
   return podName

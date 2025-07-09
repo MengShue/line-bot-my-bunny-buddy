@@ -5,5 +5,8 @@ spec:
   - name: kubectl
     image: lachlanevenson/k8s-kubectl:latest
     command:
-    - cat
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache gettext && cat
     tty: true
