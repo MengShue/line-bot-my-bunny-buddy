@@ -102,8 +102,13 @@ pipeline {
 
   post {
     always {
-      sh "kubectl -n ${NS} delete pvc ${NS}-pr-code || true"
-      sh "kubectl delete ns ${NS} || true"
+      // 先刪除所有資源
+      sh "kubectl -n ${NS} delete deployment --all || true"
+      sh "kubectl -n ${NS} delete pod --all || true"
+      sh "kubectl -n ${NS} delete svc --all || true"
+      sh "kubectl -n ${NS} delete pvc --all || true"
+      // 再刪 namespace
+      sh "kubectl delete ns ${NS} --wait=false || true"
     }
   }
 }
