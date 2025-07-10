@@ -10,6 +10,21 @@ pipeline {
     NS = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}"
   }
   stages {
+    stage('Apply RBAC') {
+      steps {
+        withCredentials([
+          file(credentialsId: 'k8s-role', variable: 'K8S_ROLE_FILE'),
+          file(credentialsId: 'k8s-role-binding', variable: 'K8S_ROLE_BINDING_FILE')
+        ]) {
+          sh '''
+            envsubst < $K8S_ROLE_FILE > /tmp/k8s-role.yaml
+            envsubst < $K8S_ROLE_BINDING_FILE > /tmp/k8s-role-binding.yaml
+            kubectl apply -f /tmp/k8s-role.yaml
+            kubectl apply -f /tmp/k8s-role-binding.yaml
+          '''
+        }
+      }
+    }
     stage('Create Namespace') {
       steps {
         sh "kubectl create ns ${NS}"
@@ -45,9 +60,10 @@ pipeline {
       steps {
         sh "export NS=${NS} && envsubst < k8s/linebot/deployment.yaml | kubectl -n ${NS} apply -f -"
         sh "kubectl -n ${NS} apply -f k8s/linebot/service.yaml"
-        // sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
-        sh "sleep 90"
+        // call healthy check to make sure the pod is ready
+        sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
         sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/pr"
+        // delete the pod and wait for the new pod to be ready, since desired to use PR code, not required to build image.
         sh "kubectl -n ${NS} delete pod ${getPodName('linebot')}"
         sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
       }
@@ -60,7 +76,7 @@ pipeline {
       }
     }
 
-    stage('Copy Code') {
+    stage('Copy Code To Test Pod') {
       steps {
         script {
           sh "kubectl -n ${NS} cp . ${getPodName('linebot-pr')}:/app"
@@ -68,7 +84,7 @@ pipeline {
       }
     }
 
-    stage('Run Tests') {
+    stage('Run Unit Tests') {
       steps {
         script {
           sh "kubectl -n ${NS} exec ${getPodName('linebot-pr')} -- bash -c 'cd /app && pip install -r requirements.txt && python3 -m unittest discover'"
@@ -76,7 +92,7 @@ pipeline {
       }
     }
 
-    stage('Deploy Ingress') {
+    stage('Deploy Ingress For Integration Test') {
       steps {
         script {
           env.PR_HOST = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
@@ -89,8 +105,9 @@ pipeline {
       steps {
         script {
           env.PR_HOST = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}.minibot.com.tw"
-          // 1. 先改 config 檔
+          // 1. 先改 config 檔: local test port is 5500, http port is 80
           sh "kubectl -n ${NS} exec ${getPodName('linebot-pr')} -- bash -c 'cd /app && sed -i \"s|^host: .*|host: ${env.PR_HOST}|\" automation/integration_config.yaml'"
+          sh "kubectl -n ${NS} exec ${getPodName('linebot-pr')} -- bash -c 'cd /app && sed -i \"s|^port: .*|port: 80|\" automation/integration_config.yaml'"
           // 2. 等待 Ingress 生效
           sh "sleep 10"
           // 3. 執行 integration test
@@ -102,12 +119,12 @@ pipeline {
 
   post {
     always {
-      // 先刪除所有資源
+      // delete all resources first to avoid take too much time to delete namespace
       sh "kubectl -n ${NS} delete deployment --all || true"
       sh "kubectl -n ${NS} delete pod --all || true"
       sh "kubectl -n ${NS} delete svc --all || true"
       sh "kubectl -n ${NS} delete pvc --all || true"
-      // 再刪 namespace
+      // delete namespace
       sh "kubectl delete ns ${NS} --wait=false || true"
     }
   }
