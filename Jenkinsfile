@@ -105,16 +105,16 @@ pipeline {
   post {
     always {
       // reverse deleting by applying order
-      sh "kubectl -n ${NS} delete -f k8s/PR/ingress.yaml || true"
-      sh "kubectl -n ${NS} delete -f k8s/PR/deployment.yaml || true"
-      sh "kubectl -n ${NS} delete -f k8s/deploy/service.yaml || true"
-      sh "kubectl -n ${NS} delete -f k8s/deploy/deployment.yaml || true"
-      sh "kubectl -n ${NS} delete -f k8s/PR/pvc.yaml || true"
+      sh "kubectl -n ${NS} delete -f k8s/PR/ingress.yaml"
+      sh "kubectl -n ${NS} delete -f k8s/PR/deployment.yaml"
+      sh "kubectl -n ${NS} delete -f k8s/deploy/service.yaml"
+      sh "kubectl -n ${NS} delete -f k8s/deploy/deployment.yaml"
+      sh "envsubst < k8s/PR/pvc.yaml | kubectl -n ${NS} delete -f -"
       // delete secret
-      sh "kubectl -n ${NS} delete secret linebot-secrets || true"
-      sh "kubectl -n ${NS} delete secret dockerhub-secret || true"
+      sh "kubectl -n ${NS} delete secret linebot-secrets"
+      sh "kubectl -n ${NS} delete secret dockerhub-secret"
       // delete namespace
-      sh "kubectl delete ns ${NS} || true"
+      sh "kubectl delete ns ${NS}"
     }
   }
 }
