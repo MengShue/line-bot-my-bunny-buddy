@@ -15,21 +15,6 @@ pipeline {
         sh "kubectl create ns ${NS}"
       }
     }
-    stage('Apply RBAC') {
-      steps {
-        withCredentials([
-          file(credentialsId: 'k8s-role', variable: 'K8S_ROLE_FILE'),
-          file(credentialsId: 'k8s-role-binding', variable: 'K8S_ROLE_BINDING_FILE')
-        ]) {
-          sh '''
-            envsubst < $K8S_ROLE_FILE > /tmp/k8s-role.yaml
-            envsubst < $K8S_ROLE_BINDING_FILE > /tmp/k8s-role-binding.yaml
-            kubectl apply -f /tmp/k8s-role.yaml
-            kubectl apply -f /tmp/k8s-role-binding.yaml
-          '''
-        }
-      }
-    }
     stage('Create Secrets') {
       steps {
         withCredentials([file(credentialsId: 'linebot-secrets-yaml', variable: 'LINEBOT_SECRET_FILE')]) {
