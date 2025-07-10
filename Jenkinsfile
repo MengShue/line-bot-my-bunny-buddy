@@ -105,10 +105,10 @@ pipeline {
   post {
     always {
       // reverse deleting by applying order
-      sh "kubectl -n ${NS} delete -f k8s/PR/ingress.yaml"
+      sh "envsubst < k8s/PR/ingress.yaml | kubectl -n ${NS} delete -f -"
       sh "kubectl -n ${NS} delete -f k8s/PR/deployment.yaml"
       sh "kubectl -n ${NS} delete -f k8s/deploy/service.yaml"
-      sh "kubectl -n ${NS} delete -f k8s/deploy/deployment.yaml"
+      sh "envsubst < k8s/deploy/deployment.yaml | kubectl -n ${NS} delete -f -"
       sh "envsubst < k8s/PR/pvc.yaml | kubectl -n ${NS} delete -f -"
       // delete secret
       sh "kubectl -n ${NS} delete secret linebot-secrets"
