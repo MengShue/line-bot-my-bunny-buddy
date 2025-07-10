@@ -10,6 +10,11 @@ pipeline {
     NS = "pr-${env.CHANGE_ID ?: env.BRANCH_NAME}"
   }
   stages {
+    stage('Create Namespace') {
+      steps {
+        sh "kubectl create ns ${NS}"
+      }
+    }
     stage('Apply RBAC') {
       steps {
         withCredentials([
@@ -23,11 +28,6 @@ pipeline {
             kubectl apply -f /tmp/k8s-role-binding.yaml
           '''
         }
-      }
-    }
-    stage('Create Namespace') {
-      steps {
-        sh "kubectl create ns ${NS}"
       }
     }
     stage('Create Secrets') {
