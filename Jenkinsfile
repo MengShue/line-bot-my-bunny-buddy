@@ -43,8 +43,8 @@ pipeline {
 
     stage('Deploy Main Server') {
       steps {
-        sh "export NS=${NS} && envsubst < k8s/linebot/deployment.yaml | kubectl -n ${NS} apply -f -"
-        sh "kubectl -n ${NS} apply -f k8s/linebot/service.yaml"
+        sh "export NS=${NS} && envsubst < k8s/deploy/deployment.yaml | kubectl -n ${NS} apply -f -"
+        sh "kubectl -n ${NS} apply -f k8s/deploy/service.yaml"
         // call healthy check to make sure the pod is ready
         sh "kubectl -n ${NS} wait --for=condition=ready pod -l app=linebot --timeout=90s"
         sh "kubectl -n ${NS} cp . ${getPodName('linebot')}:/pr"
@@ -104,13 +104,17 @@ pipeline {
 
   post {
     always {
-      // delete all resources first to avoid take too much time to delete namespace
-      sh "kubectl -n ${NS} delete deployment --all || true"
-      sh "kubectl -n ${NS} delete pod --all || true"
-      sh "kubectl -n ${NS} delete svc --all || true"
-      sh "kubectl -n ${NS} delete pvc --all || true"
+      // reverse deleting by applying order
+      sh "kubectl -n ${NS} delete -f k8s/PR/ingress.yaml || true"
+      sh "kubectl -n ${NS} delete -f k8s/PR/deployment.yaml || true"
+      sh "kubectl -n ${NS} delete -f k8s/deploy/service.yaml || true"
+      sh "kubectl -n ${NS} delete -f k8s/deploy/deployment.yaml || true"
+      sh "kubectl -n ${NS} delete -f k8s/PR/pvc.yaml || true"
+      // delete secret
+      sh "kubectl -n ${NS} delete secret linebot-secrets || true"
+      sh "kubectl -n ${NS} delete secret dockerhub-secret || true"
       // delete namespace
-      sh "kubectl delete ns ${NS} --wait=false || true"
+      sh "kubectl delete ns ${NS} || true"
     }
   }
 }
