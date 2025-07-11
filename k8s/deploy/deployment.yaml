@@ -24,10 +24,10 @@ spec:
             - |
               if [ -f /pr/app/app.py ]; then
                 echo 'Run code from /pr';
-                cd /pr && pip install -r requirements.txt && python -m app.app;
+                cd /pr && pip install -r requirements.txt && gunicorn -w 4 -b 0.0.0.0:5500 app.app:app
               else
                 echo 'Run code from image';
-                cd /code && python -m app.app;
+                cd /code && gunicorn -w 4 -b 0.0.0.0:5500 app.app:app
               fi
           ports:
             - containerPort: 5500
