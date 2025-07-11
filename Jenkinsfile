@@ -14,15 +14,17 @@ pipeline {
       steps {
         sh '''
         echo "[INFO] Checking namespace finalizer..."
-        kubectl get ns ${NS}
+        kubectl get ns ${NS} > /dev/null 2>&1
         if [ $? -eq 0 ]; then
           echo "[WARN] Namespace ${NS} still exists, try to force remove finalizer."
           kubectl get namespace ${NS} -o json > /tmp/ns.json
           jq '.spec = {"finalizers":[]}' /tmp/ns.json > /tmp/ns-finalize.json
           kubectl replace --raw "/api/v1/namespaces/${NS}/finalize" -f /tmp/ns-finalize.json
+        else
+          echo "[INFO] Namespace ${NS} not found, nothing to clean."
         fi
         sleep 10
-      '''
+        '''
       }
     }
     stage('Create Namespace') {
