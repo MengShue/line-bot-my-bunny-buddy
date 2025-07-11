@@ -14,8 +14,7 @@ pipeline {
       steps {
         sh '''
         echo "[INFO] Checking namespace finalizer..."
-        kubectl get ns ${NS} > /dev/null 2>&1
-        if [ $? -eq 0 ]; then
+        if kubectl get ns ${NS}; then
           echo "[WARN] Namespace ${NS} still exists, try to force remove finalizer."
           kubectl get namespace ${NS} -o json > /tmp/ns.json
           jq '.spec = {"finalizers":[]}' /tmp/ns.json > /tmp/ns-finalize.json
