@@ -115,6 +115,18 @@ pipeline {
       sh "kubectl -n ${NS} delete secret dockerhub-secret"
       // delete namespace
       sh "kubectl delete ns ${NS}"
+      // sleep 10 秒後檢查 namespace 是否還存在，若存在則強制移除 finalizer
+      sh '''
+        echo "[INFO] Sleep 10s before checking namespace finalizer..."
+        sleep 10
+        kubectl get ns ${NS}
+        if [ $? -eq 0 ]; then
+          echo "[WARN] Namespace ${NS} still exists, try to force remove finalizer."
+          kubectl get namespace ${NS} -o json > /tmp/ns.json
+          jq '.spec = {"finalizers":[]}' /tmp/ns.json > /tmp/ns-finalize.json
+          kubectl replace --raw "/api/v1/namespaces/${NS}/finalize" -f /tmp/ns-finalize.json
+        fi
+      '''
     }
   }
 }
