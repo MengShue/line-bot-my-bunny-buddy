@@ -129,7 +129,7 @@ pipeline {
       // sh "kubectl -n ${NS} delete secret linebot-secrets"
       // sh "kubectl -n ${NS} delete secret dockerhub-secret"
       // delete namespace
-      sh "kubectl delete ns ${NS} || true"
+      sh "kubectl delete ns ${NS} --wait=false || true"
       // sleep 10 秒後檢查 namespace 是否還存在，若存在則強制移除 finalizer
       // sh '''
       //   echo "[INFO] Sleep 10s before checking namespace finalizer..."
