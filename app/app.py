@@ -11,6 +11,8 @@ from flasgger import Swagger
 from utils.ocr_cloudvision import extract_text_from_image, parse_total_amount
 from utils.invoice_processing import is_uniform_invoice, process_uniform_invoice
 from utils.cwa import get_radar_image_url, get_rainfall_image_url, get_temperature_image_url, get_qpf_image_url
+# Map recommendation module
+from map_recommedation.agent import run_query
 # Logging
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -196,6 +198,50 @@ def handle_text(event):
                 TextSendMessage(text="⚡ 取得定量降水預報圖時發生錯誤，請稍後再試。")
             )
         return
+    
+    # Handle map recommendation requests
+    if user_text.startswith("@推薦") or user_text.startswith("@美食"):
+        import asyncio
+        try:
+            # Extract address from user input
+            # Format: "@推薦 新北市板橋" or "@美食 台北市信義區"
+            address = user_text.split(maxsplit=1)[1] if len(user_text.split()) > 1 else "新北市板橋"
+            
+            # Send initial message to user (this consumes reply_token)
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="🔍 正在為您搜尋附近的美食推薦，請稍候...")
+            )
+            
+            # Get user_id for push_message (since reply_token is already used)
+            user_id = event.source.user_id
+            
+            # Run the recommendation agent
+            result = asyncio.run(run_query(address=address, radius_m=2000))
+            
+            # LINE message has a limit of 5000 characters
+            # If result is too long, truncate it
+            if len(result) > 5000:
+                result = result[:4900] + "\n\n(內容過長，已截斷部分內容)"
+            
+            # Send the recommendation result using push_message
+            line_bot_api.push_message(
+                user_id,
+                TextSendMessage(text=f"📍 {address} 附近的美食推薦：\n\n{result}")
+            )
+        except Exception as e:
+            logging.error(f"取得美食推薦時發生錯誤: {e}", exc_info=True)
+            # Try to send error message using push_message if reply_token was already used
+            try:
+                user_id = event.source.user_id
+                line_bot_api.push_message(
+                    user_id,
+                    TextSendMessage(text="⚡ 取得美食推薦時發生錯誤，請稍後再試。")
+                )
+            except Exception as push_error:
+                logging.error(f"發送錯誤訊息失敗: {push_error}")
+        return
+    
     # 其他文字訊息暫不處理
     print(f"Get Message: {event.message}")
     # line_bot_api.reply_message(
