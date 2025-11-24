@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr-eng \
     libgl1 \
     curl \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # set working directory
