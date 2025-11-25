@@ -208,7 +208,7 @@ def handle_text(event):
             address = user_text.split(maxsplit=1)[1] if len(user_text.split()) > 1 else "新北市板橋"
             
             # Get user_id for push_message and agent query
-            user_id = event.get('source', {}).get('userId', None)
+            user_id = event.source.user_id
             logging.info(f"[handle_text] 收到美食推薦請求 - user_id: {user_id}, address: {address}")
             
             # Send initial message to user (this consumes reply_token)
