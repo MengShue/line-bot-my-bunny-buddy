@@ -4,7 +4,14 @@ import yaml
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, ImageMessage, ImageSendMessage
+from linebot.models import (
+    ImageMessage,
+    ImageSendMessage,
+    LocationMessage,
+    MessageEvent,
+    TextMessage,
+    TextSendMessage,
+)
 from flasgger import Swagger
 
 # OCR module
@@ -257,6 +264,57 @@ def handle_text(event):
 def handle_image(event):
     # Handle image
     handle_image_message(event)
+
+
+@handler.add(MessageEvent, message=LocationMessage)
+def handle_location(event):
+    import asyncio
+
+    address = event.message.address or ""
+    latitude = event.message.latitude
+    longitude = event.message.longitude
+    user_id = event.source.user_id
+    logging.info(
+        "[handle_location] 收到定位事件 - user_id: %s, address: %s, latitude: %s, longitude: %s",
+        user_id,
+        address,
+        latitude,
+        longitude,
+    )
+
+    try:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text="📍 已收到定位資訊，正在為您整理附近的美食推薦..."),
+        )
+
+        result = asyncio.run(
+            run_query(
+                address=address or None,
+                user_id=user_id,
+                radius_m=2000,
+                latitude=latitude,
+                longitude=longitude,
+            )
+        )
+
+        if len(result) > 5000:
+            result = result[:4900] + "\n\n(內容過長，已截斷部分內容)"
+
+        header = address if address else f"{latitude:.5f}, {longitude:.5f}"
+        line_bot_api.push_message(
+            user_id,
+            TextSendMessage(text=f"📍 {header} 附近的美食推薦：\n\n{result}"),
+        )
+    except Exception as exc:
+        logging.error("處理定位事件時發生錯誤: %s", exc, exc_info=True)
+        try:
+            line_bot_api.push_message(
+                user_id,
+                TextSendMessage(text="⚡ 取得定位美食推薦時發生錯誤，請稍後再試。"),
+            )
+        except Exception as push_error:
+            logging.error("定位推薦錯誤訊息推播失敗: %s", push_error)
 
 
 def handle_image_message(event):
