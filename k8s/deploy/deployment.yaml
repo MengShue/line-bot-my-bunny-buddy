@@ -67,6 +67,16 @@ spec:
                 secretKeyRef:
                   name: linebot-secrets
                   key: CWA_API_KEY
+            - name: GOOGLE_MAPS_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: linebot-secrets
+                  key: GOOGLE_MAPS_API_KEY
+            - name: GOOGLE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: linebot-secrets
+                  key: GOOGLE_API_KEY
             - name: PORT
               value: "5500"
           volumeMounts:
@@ -89,4 +99,4 @@ spec:
       volumes:
         - name: pr-code
           persistentVolumeClaim:
-            claimName: ${NS}-pr-code
+            claimName: pr-code
