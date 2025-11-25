@@ -51,11 +51,11 @@ maps_toolset = McpToolset(
 # === Create Agent instruction (system prompt)===
 SYSTEM_INSTRUCTION = """
 你是一位在地美食嚮導。流程：
-1) 先將使用者給的地點（或預設「新北市板橋」）地理編碼成經緯度。
+1) 先將使用者給的地點地理編碼成經緯度。
 2) 搜尋 2 公里內的「咖啡廳」與「餐廳」各 8 家做為候選。
 3) 對每個候選呼叫地點詳情，取得 rating、user_ratings_total、price_level、opening_hours、最近幾則 reviews（若可得）。
 4) 先用規則分數（例如：加權 = rating * log1p(user_ratings_total)），再閱讀評論做語義評估（風味、一致性、環境、服務、近期負評）。
-5) 最後輸出：Top 5 咖啡廳 + Top 5 餐廳的表格（店名、類型、評分、評分數、代表評論摘要、適合族群、地址與 Google Maps 連結），並附上簡短解釋排序依據。
+5) 最後輸出：Top 3-5 咖啡廳 + Top 3-5 餐廳的條列式清單（店名、類型、評分、評分數、代表評論摘要、適合族群、地址與 Google Maps 連結），並附上簡短解釋排序依據，但總共不得多於1000字。
 注意：
 - 請使用 maps_toolset 來執行此任務
 - 優先近期評論；若評論疑似機械式/置評，降低權重。
@@ -71,37 +71,46 @@ root_agent = LlmAgent(
 )
 
 # === run query function ===
-async def run_query(address: str, radius_m: int = 2000) -> str:
+async def run_query(address: str, user_id: str, radius_m: int = 2000) -> str:
     """
     Run the map recommendation agent query and return the result as a string.
     
     Args:
         address: The address or location to search around.
+        user_id: The user ID for session management.
         radius_m: Search radius in meters (default: 2000).
     
     Returns:
         The agent's response as a string.
     """
+    logging.info(f"[run_query] 開始執行美食推薦查詢 - user_id: {user_id}, address: {address}, radius_m: {radius_m}")
+    
     # user prompt
     user_prompt = f"""
 請以 {address} 為中心，在 {radius_m} 公尺內：
-- 挑出最推薦的 5 間咖啡廳與 5 間餐廳
+- 挑出最推薦的 3-5 間咖啡廳與 3-5 間餐廳
 - 先比對評分與評分數，再閱讀評論文字做語義排序
-- 請輸出清單 + 每家 1~2 句評論摘要 + 為何推薦
+- 請輸出條列式清單 + 每家 1~2 句評論摘要 + 為何推薦
 - 提供餐廳連結請使用 https://www.google.com/maps/search/?api=1&query=%E8%97%8F%E9%AE%AE%E6%B5%B7%E9%AE%AE%E7%87%92%E7%83%A4%E6%96%99%E7%90%86 這種格式。
 """
+    logging.info(f"[run_query] 已建立使用者提示 - address: {address}, radius_m: {radius_m}")
+    
     # initialize session and artifact service
+    logging.info(f"[run_query] 初始化 session 和 artifact service")
     session_service = InMemorySessionService()
     artifact_service = InMemoryArtifactService()
     
     # create session
+    logging.info(f"[run_query] 建立 session - user_id: {user_id}, app_name: {root_agent.name}")
     session = await session_service.create_session(
         app_name=root_agent.name,
-        user_id="user_1",
+        user_id=user_id,
         state={},
     )
+    logging.info(f"[run_query] Session 建立成功 - session_id: {session.id}, user_id: {session.user_id}")
     
     # create runner
+    logging.info(f"[run_query] 建立 Runner")
     runner = Runner(
         app_name=root_agent.name,
         agent=root_agent,
@@ -111,9 +120,11 @@ async def run_query(address: str, radius_m: int = 2000) -> str:
     
     # convert user prompt to Content format
     content = types.Content(role="user", parts=[types.Part(text=user_prompt)])
+    logging.info(f"[run_query] 開始執行 agent - session_id: {session.id}")
     
     # collect response text
     response_text = ""
+    event_count = 0
     
     # run agent and iterate through event stream
     async for event in runner.run_async(
@@ -121,19 +132,26 @@ async def run_query(address: str, radius_m: int = 2000) -> str:
         session_id=session.id,
         new_message=content,
     ):
+        event_count += 1
         # collect event with text content
         if event.content and event.content.parts:
             for part in event.content.parts:
                 if part.text:
                     response_text += part.text
+                    logging.debug(f"[run_query] 收到事件 #{event_count}，累積回應長度: {len(response_text)} 字元")
+    
+    logging.info(f"[run_query] Agent 執行完成 - 總共收到 {event_count} 個事件，回應長度: {len(response_text)} 字元")
     
     # close MCP connection
+    logging.info(f"[run_query] 關閉 MCP 連線")
     await maps_toolset.close()
-    print(response_text)
+    logging.info(f"[run_query] MCP 連線已關閉")
+    
+    logging.info(f"[run_query] 查詢完成 - user_id: {user_id}, address: {address}, 回應長度: {len(response_text)} 字元")
     
     return response_text
 
 if __name__ == "__main__":
     # default address is "新北市板橋"
-    logging.info(GOOGLE_MAPS_API_KEY)
-    asyncio.run(run_query(address="新北市板橋", radius_m=2000))
+    logging.info(f"[main] run agent.py directly")
+    asyncio.run(run_query(address="新北市板橋", user_id="test_user", radius_m=2000))
