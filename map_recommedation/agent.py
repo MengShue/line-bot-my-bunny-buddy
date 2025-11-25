@@ -43,6 +43,7 @@ maps_toolset = McpToolset(
                 "GOOGLE_MAPS_API_KEY": GOOGLE_MAPS_API_KEY or ""
             },
         ),
+        timeout=60.0,
     ),
     # Can also use tool_filter to limit tool list (e.g. only keep nearby / details / geocode)
 )
