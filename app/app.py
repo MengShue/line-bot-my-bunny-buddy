@@ -207,17 +207,20 @@ def handle_text(event):
             # Format: "@推薦 新北市板橋" or "@美食 台北市信義區"
             address = user_text.split(maxsplit=1)[1] if len(user_text.split()) > 1 else "新北市板橋"
             
+            # Get user_id for push_message and agent query
+            user_id = event.get('source', {}).get('userId', None)
+            logging.info(f"[handle_text] 收到美食推薦請求 - user_id: {user_id}, address: {address}")
+            
             # Send initial message to user (this consumes reply_token)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="🔍 正在為您搜尋附近的美食推薦，請稍候...")
             )
             
-            # Get user_id for push_message (since reply_token is already used)
-            user_id = event.source.user_id
-            
             # Run the recommendation agent
-            result = asyncio.run(run_query(address=address, radius_m=2000))
+            logging.info(f"[handle_text] 開始執行 run_query - user_id: {user_id}, address: {address}")
+            result = asyncio.run(run_query(address=address, user_id=user_id, radius_m=2000))
+            logging.info(f"[handle_text] run_query 執行完成 - user_id: {user_id}, 結果長度: {len(result)} 字元")
             
             # LINE message has a limit of 5000 characters
             # If result is too long, truncate it
