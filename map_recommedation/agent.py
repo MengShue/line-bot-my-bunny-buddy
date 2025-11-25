@@ -1,6 +1,7 @@
+import asyncio
 import logging
 import os
-import asyncio
+from typing import Optional
 
 from dotenv import load_dotenv
 from google.genai import types
@@ -71,29 +72,65 @@ root_agent = LlmAgent(
 )
 
 # === run query function ===
-async def run_query(address: str, user_id: str, radius_m: int = 2000) -> str:
+async def run_query(
+    address: Optional[str],
+    user_id: str,
+    radius_m: int = 2000,
+    latitude: Optional[float] = None,
+    longitude: Optional[float] = None,
+) -> str:
     """
     Run the map recommendation agent query and return the result as a string.
-    
+
     Args:
-        address: The address or location to search around.
-        user_id: The user ID for session management.
-        radius_m: Search radius in meters (default: 2000).
-    
+        address (Optional[str]): Human readable address (if available).
+        user_id (str): LINE user id used for session management.
+        radius_m (int): Search radius in meters.
+        latitude (Optional[float]): Latitude from LINE location event.
+        longitude (Optional[float]): Longitude from LINE location event.
+
     Returns:
-        The agent's response as a string.
+        str: Agent response text.
+
+    Raises:
+        ValueError: If both address and coordinates are missing.
     """
-    logging.info(f"[run_query] 開始執行美食推薦查詢 - user_id: {user_id}, address: {address}, radius_m: {radius_m}")
-    
+    if not address and (latitude is None or longitude is None):
+        raise ValueError("address 或經緯度需至少提供一種資訊。")
+
+    logging.info(
+        "[run_query] 開始執行美食推薦查詢 - user_id: %s, address: %s, "
+        "latitude: %s, longitude: %s, radius_m: %s",
+        user_id,
+        address,
+        latitude,
+        longitude,
+        radius_m,
+    )
+
     # user prompt
+    location_lines = []
+    if address:
+        location_lines.append(f"地址：{address}")
+    if latitude is not None and longitude is not None:
+        location_lines.append(f"經緯度：{latitude:.6f}, {longitude:.6f}")
+    location_desc = "\n".join(location_lines)
     user_prompt = f"""
-請以 {address} 為中心，在 {radius_m} 公尺內：
+請以以下位置為中心：
+{location_desc}
+並在 {radius_m} 公尺內：
 - 挑出最推薦的 3-5 間咖啡廳與 3-5 間餐廳
 - 先比對評分與評分數，再閱讀評論文字做語義排序
 - 請輸出條列式清單 + 每家 1~2 句評論摘要 + 為何推薦
 - 提供餐廳連結請使用 https://www.google.com/maps/search/?api=1&query=%E8%97%8F%E9%AE%AE%E6%B5%B7%E9%AE%AE%E7%87%92%E7%83%A4%E6%96%99%E7%90%86 這種格式。
 """
-    logging.info(f"[run_query] 已建立使用者提示 - address: {address}, radius_m: {radius_m}")
+    logging.info(
+        "[run_query] 已建立使用者提示 - address: %s, latitude: %s, longitude: %s, radius_m: %s",
+        address,
+        latitude,
+        longitude,
+        radius_m,
+    )
     
     # initialize session and artifact service
     logging.info(f"[run_query] 初始化 session 和 artifact service")
