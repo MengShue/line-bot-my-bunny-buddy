@@ -19,7 +19,6 @@ from mcp import StdioServerParameters
 
 load_dotenv()  # Load .env
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
-logging.info(GOOGLE_MAPS_API_KEY)
 
 
 
