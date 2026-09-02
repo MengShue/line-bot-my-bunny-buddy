@@ -21,7 +21,6 @@ load_dotenv()  # Load .env
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
 
 
-
 # retry config
 retry_config = types.HttpRetryOptions(
     attempts=5,  # Maximum retry attempts
@@ -70,6 +69,7 @@ root_agent = LlmAgent(
     tools=[maps_toolset],
 )
 
+
 # === run query function ===
 async def run_query(
     address: Optional[str],
@@ -114,6 +114,11 @@ async def run_query(
     if latitude is not None and longitude is not None:
         location_lines.append(f"經緯度：{latitude:.6f}, {longitude:.6f}")
     location_desc = "\n".join(location_lines)
+    maps_url_example = (
+        "https://www.google.com/maps/search/?api=1&query="
+        "%E8%97%8F%E9%AE%AE%E6%B5%B7%E9%AE%AE%E7%87%92%E7%83%A4"
+        "%E6%96%99%E7%90%86"
+    )
     user_prompt = f"""
 請以以下位置為中心：
 {location_desc}
@@ -121,7 +126,7 @@ async def run_query(
 - 挑出最推薦的 3-5 間咖啡廳與 3-5 間餐廳
 - 先比對評分與評分數，再閱讀評論文字做語義排序
 - 請輸出條列式清單 + 每家 1~2 句評論摘要 + 為何推薦
-- 提供餐廳連結請使用 https://www.google.com/maps/search/?api=1&query=%E8%97%8F%E9%AE%AE%E6%B5%B7%E9%AE%AE%E7%87%92%E7%83%A4%E6%96%99%E7%90%86 這種格式。
+- 提供餐廳連結請使用 {maps_url_example} 這種格式。
 """
     logging.info(
         "[run_query] 已建立使用者提示 - address: %s, latitude: %s, longitude: %s, radius_m: %s",
@@ -130,12 +135,12 @@ async def run_query(
         longitude,
         radius_m,
     )
-    
+
     # initialize session and artifact service
-    logging.info(f"[run_query] 初始化 session 和 artifact service")
+    logging.info("[run_query] 初始化 session 和 artifact service")
     session_service = InMemorySessionService()
     artifact_service = InMemoryArtifactService()
-    
+
     # create session
     logging.info(f"[run_query] 建立 session - user_id: {user_id}, app_name: {root_agent.name}")
     session = await session_service.create_session(
@@ -144,24 +149,24 @@ async def run_query(
         state={},
     )
     logging.info(f"[run_query] Session 建立成功 - session_id: {session.id}, user_id: {session.user_id}")
-    
+
     # create runner
-    logging.info(f"[run_query] 建立 Runner")
+    logging.info("[run_query] 建立 Runner")
     runner = Runner(
         app_name=root_agent.name,
         agent=root_agent,
         session_service=session_service,
         artifact_service=artifact_service,
     )
-    
+
     # convert user prompt to Content format
     content = types.Content(role="user", parts=[types.Part(text=user_prompt)])
     logging.info(f"[run_query] 開始執行 agent - session_id: {session.id}")
-    
+
     # collect response text
     response_text = ""
     event_count = 0
-    
+
     # run agent and iterate through event stream
     async for event in runner.run_async(
         user_id=session.user_id,
@@ -175,19 +180,20 @@ async def run_query(
                 if part.text:
                     response_text += part.text
                     logging.debug(f"[run_query] 收到事件 #{event_count}，累積回應長度: {len(response_text)} 字元")
-    
+
     logging.info(f"[run_query] Agent 執行完成 - 總共收到 {event_count} 個事件，回應長度: {len(response_text)} 字元")
-    
+
     # close MCP connection
-    logging.info(f"[run_query] 關閉 MCP 連線")
+    logging.info("[run_query] 關閉 MCP 連線")
     await maps_toolset.close()
-    logging.info(f"[run_query] MCP 連線已關閉")
-    
+    logging.info("[run_query] MCP 連線已關閉")
+
     logging.info(f"[run_query] 查詢完成 - user_id: {user_id}, address: {address}, 回應長度: {len(response_text)} 字元")
-    
+
     return response_text
+
 
 if __name__ == "__main__":
     # default address is "新北市板橋"
-    logging.info(f"[main] run agent.py directly")
+    logging.info("[main] run agent.py directly")
     asyncio.run(run_query(address="新北市板橋", user_id="test_user", radius_m=2000))
