@@ -207,7 +207,7 @@ def handle_text(event):
                 TextSendMessage(text="⚡ 取得定量降水預報圖時發生錯誤，請稍後再試。")
             )
         return
-    
+
     # Handle map recommendation requests
     if user_text.startswith("@推薦") or user_text.startswith("@美食"):
         import asyncio
@@ -215,28 +215,28 @@ def handle_text(event):
             # Extract address from user input
             # Format: "@推薦 新北市板橋" or "@美食 台北市信義區"
             address = user_text.split(maxsplit=1)[1] if len(user_text.split()) > 1 else "新北市板橋"
-            
+
             # Keep the querying user separate from the conversation to reply to.
             user_id = event.source.user_id
             conversation_id = get_conversation_id(event.source)
             logging.info(f"[handle_text] 收到美食推薦請求 - user_id: {user_id}, address: {address}")
-            
+
             # Send initial message to user (this consumes reply_token)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="🔍 正在為您搜尋附近的美食推薦，請稍候...")
             )
-            
+
             # Run the recommendation agent
             logging.info(f"[handle_text] 開始執行 run_query - user_id: {user_id}, address: {address}")
             result = asyncio.run(run_query(address=address, user_id=user_id, radius_m=2000))
             logging.info(f"[handle_text] run_query 執行完成 - user_id: {user_id}, 結果長度: {len(result)} 字元")
-            
+
             # LINE message has a limit of 5000 characters
             # If result is too long, truncate it
             if len(result) > 5000:
                 result = result[:4900] + "\n\n(內容過長，已截斷部分內容)"
-            
+
             # Send the recommendation result using push_message
             line_bot_api.push_message(
                 conversation_id,
@@ -254,7 +254,7 @@ def handle_text(event):
             except Exception as push_error:
                 logging.error(f"發送錯誤訊息失敗: {push_error}")
         return
-    
+
     # 其他文字訊息暫不處理
     print(f"Get Message: {event.message}")
     # line_bot_api.reply_message(
