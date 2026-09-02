@@ -14,6 +14,8 @@ from linebot.models import (
 )
 from flasgger import Swagger
 
+from app.line_destination import get_conversation_id
+
 # OCR module
 from utils.ocr_cloudvision import extract_text_from_image, parse_total_amount
 from utils.invoice_processing import is_uniform_invoice, process_uniform_invoice
@@ -214,8 +216,9 @@ def handle_text(event):
             # Format: "@推薦 新北市板橋" or "@美食 台北市信義區"
             address = user_text.split(maxsplit=1)[1] if len(user_text.split()) > 1 else "新北市板橋"
             
-            # Get user_id for push_message and agent query
+            # Keep the querying user separate from the conversation to reply to.
             user_id = event.source.user_id
+            conversation_id = get_conversation_id(event.source)
             logging.info(f"[handle_text] 收到美食推薦請求 - user_id: {user_id}, address: {address}")
             
             # Send initial message to user (this consumes reply_token)
@@ -236,16 +239,16 @@ def handle_text(event):
             
             # Send the recommendation result using push_message
             line_bot_api.push_message(
-                user_id,
+                conversation_id,
                 TextSendMessage(text=f"📍 {address} 附近的美食推薦：\n\n{result}")
             )
         except Exception as e:
             logging.error(f"取得美食推薦時發生錯誤: {e}", exc_info=True)
             # Try to send error message using push_message if reply_token was already used
             try:
-                user_id = event.source.user_id
+                conversation_id = get_conversation_id(event.source)
                 line_bot_api.push_message(
-                    user_id,
+                    conversation_id,
                     TextSendMessage(text="⚡ 取得美食推薦時發生錯誤，請稍後再試。")
                 )
             except Exception as push_error:
@@ -274,6 +277,7 @@ def handle_location(event):
     latitude = event.message.latitude
     longitude = event.message.longitude
     user_id = event.source.user_id
+    conversation_id = get_conversation_id(event.source)
     logging.info(
         "[handle_location] 收到定位事件 - user_id: %s, address: %s, latitude: %s, longitude: %s",
         user_id,
@@ -303,14 +307,14 @@ def handle_location(event):
 
         header = address if address else f"{latitude:.5f}, {longitude:.5f}"
         line_bot_api.push_message(
-            user_id,
+            conversation_id,
             TextSendMessage(text=f"📍 {header} 附近的美食推薦：\n\n{result}"),
         )
     except Exception as exc:
         logging.error("處理定位事件時發生錯誤: %s", exc, exc_info=True)
         try:
             line_bot_api.push_message(
-                user_id,
+                conversation_id,
                 TextSendMessage(text="⚡ 取得定位美食推薦時發生錯誤，請稍後再試。"),
             )
         except Exception as push_error:
